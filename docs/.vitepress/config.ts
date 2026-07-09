@@ -11,6 +11,7 @@ export default defineConfig(
                 },
             },
             markdown: {
+                breaks: true,
                 config: (md) => {
                     md.use((katexPlugin as any).default);
                 },
