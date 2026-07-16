@@ -121,7 +121,7 @@ $$\lim\limits_{Δx \to 0}\frac{f(x_0+Δx,y_0)-f(x_0,y_0)}{Δx}$$
 如果我们把 $y$ 固定在 $y_0$ 处，让 $x$ 自用变化，那么可以想象出是一个平面$y=y_0$和函数曲面相交，相交处是一条曲线，这样就变成了一元函数求导了。
 ### 示例：马鞍面 ($z=x^2-y^2$) 和 $y=-0.5$ 相交得到一条曲线
 
-<FunctionEcharts :exprs="[{x:'u',y:'v',z:'u^2-v^2'},{x:'u',y:'-0.5',z:'v'}]" title="双曲抛物面 z = x² - y²和y=-0.5" :xRange="[-2,2]" :yRange="[-2,2]" :steps="0.3"/>
+<BiFunctionEcharts :exprs="[{x:'u',y:'v',z:'u^2-v^2'},{x:'u',y:'-0.5',z:'v'}]" title="双曲抛物面 z = x² - y²和y=-0.5" :xRange="[-2,2]" :yRange="[-2,2]" :steps="0.3"/>
 
 ## 全微分
 如果 $Δz=AΔx+BΔy+o(Δρ)$，那么我们就把 $AΔx+BΔy$ 叫做函数 $f(x,y)$ 在点 $(x,y)$ 处的全微分，并且记成 $\mathrm{d}z=AΔx+BΔy$

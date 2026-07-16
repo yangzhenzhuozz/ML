@@ -7,8 +7,7 @@
 <script setup lang="ts">
 import { EChartsType } from 'echarts';
 import { ECBasicOption } from 'echarts/types/dist/shared';
-import { onMounted, ref, useTemplateRef, watch, type PropType } from 'vue';
-const { max, min, sqrt, pow, cosh, sinh, sin, cos } = Math;
+import { onMounted, useTemplateRef, watch, type PropType } from 'vue';
 const props = defineProps({
     //都是参数方程
     exprs: {
@@ -111,10 +110,6 @@ const renderChart = async () => {
             };
         }),
     };
-    var aa = 0.4;
-    var r = 1 - aa * aa;
-    var w = sqrt(r);
-
     myChart.setOption(option);
 };
 
