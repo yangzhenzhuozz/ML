@@ -21,6 +21,7 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "postcss": "^8.5.19",
     "vitepress": "2.0.0-alpha.17",
     "vitepress-sidebar": "^1.36.1",
     "vue": "^3.5.39"

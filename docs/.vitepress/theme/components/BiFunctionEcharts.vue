@@ -30,7 +30,7 @@ const props = defineProps({
         >,
         required: true,
     },
-    title: { type: String, default: '' }, // 标题
+    title: { type: String, default: '' },
 });
 
 const chartRef = useTemplateRef('chartRef');
