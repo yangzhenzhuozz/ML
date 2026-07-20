@@ -7,7 +7,13 @@
 <script setup lang="ts">
 import { EChartsType } from 'echarts';
 import { ECBasicOption } from 'echarts/types/dist/shared';
-import { onMounted, useTemplateRef, watch, type PropType } from 'vue';
+import {
+    onMounted,
+    onUnmounted,
+    useTemplateRef,
+    watch,
+    type PropType,
+} from 'vue';
 const props = defineProps({
     //都是参数方程
     exprs: {
@@ -113,9 +119,16 @@ const renderChart = async () => {
     myChart.setOption(option);
 };
 
+const handleResize = () => myChart?.resize();
+
 onMounted(() => {
     renderChart();
-    window.addEventListener('resize', () => myChart?.resize());
+    window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
+    myChart?.dispose();
 });
 
 watch(
