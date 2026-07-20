@@ -123,7 +123,7 @@
                 </svg>
                 回归原点 (0,0)
             </button>
-            <button class="btn btn-secondary" @click="initParam(true)">
+            <button class="btn btn-secondary" @click="initParam(true)" title="尽量生成梯度消失的随机数据">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="14"
@@ -145,7 +145,7 @@
                     <path d="M15 14.26a4 4 0 0 0 3 1.74h4" />
                     <path d="m22 20-4-4" />
                 </svg>
-                随机远点（尽量生成梯度消失的随机数据）
+                随机远点
             </button>
             <button
                 class="btn btn-primary"

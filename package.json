@@ -21,6 +21,7 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "mermaid": "^11.16.0",
     "postcss": "^8.5.19",
     "vitepress": "2.0.0-alpha.17",
     "vitepress-sidebar": "^1.36.1",

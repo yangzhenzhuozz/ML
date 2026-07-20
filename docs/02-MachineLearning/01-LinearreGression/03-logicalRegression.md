@@ -1,7 +1,8 @@
 # 逻辑回归
+
 本章梳理一下逻辑回归，这个算法由于简单、实用、高效，在业界应用十分广泛。注意，这里的“逻辑”是音译“逻辑斯蒂（logistic）”的缩写，并不是说这个算法具有怎样的逻辑性。
 
-之前我们通过线性回归，已经能将传感器采集到的电压映射为实际电压。如果现在有这样一个任务：我们的设备在工作时，电压是一个比较稳定的值（3~5V），如果电路出现短路，传感器采集的电压会瞬间下降到1V以下。所以我们需要设置一个函数来判断设备是否处于安全状态。
+之前我们通过线性回归，已经能将传感器采集到的电压映射为实际电压。如果现在有这样一个任务：我们的设备在工作时，电压是一个比较稳定的值（32V），如果电路出现短路，传感器采集的电压会瞬间下降到1V以下。所以我们需要设置一个函数来判断设备是否处于安全状态。
 
 最直观的想法是，直接用线性回归算出当前的电压值 $z = \omega x + b$。当 $z > 16$ 时判定为安全（输出1），当 $z \le 16$ 时判定为短路（输出0）。这就是经典的阶跃分段函数：
 
@@ -38,24 +39,35 @@ $$\operatorname{Sigmoid}(x)=\dfrac{1}{1+e^{-x}}$$
 
 读到这里，你可能会一拍大腿：“这题我会！上一章线性回归我们学过**均方误差（MSE）**，直接拿过来用不就得了？”
 
-我们不妨试着把它们焊在一起。为了和上一章对齐，我们继续用所有样本的均方误差（MSE）来作为损失函数。Loss 函数就会长成这样：
+为了理清推导逻辑，我们先统一数学符号：
+- $y$ 代表样本的**真实标签**（0 或 1）。
+- $a$ 代表模型的**预测输出**（经过 Sigmoid 激活后的概率值，即 $a = \sigma(z)$）。
 
-$$\operatorname{Loss}_{\text{MSE}} = \frac{1}{n}\sum\limits_{i=1}^{n} \left(Y_i - \frac{1}{1 + e^{-(\omega X_i + b)}}\right)^2$$
+我们预测值 $a$ 的表达式为：
+$$a = \sigma(z) = \frac{1}{1 + e^{-(\omega x + b)}}$$
 
-我们对 $ω$ 和 $b$ 求偏导数
-$\frac{\partial \operatorname{Loss}}{\partial ω}=\frac{1}{n}\sum\limits_{i=1}^{n}-2(Y_i-\frac{1}{1+e^{-(ωX_i+b)}})\frac{1}{(1+e^{-(ωX_i+b)})^2}e^{-(ωX_i+b)}X_i$
-$\frac{\partial \operatorname{Loss}}{\partial b}=\frac{1}{n}\sum\limits_{i=1}^{n}-2(Y_i-\frac{1}{1+e^{-(ωX_i+b)}})\frac{1}{(1+e^{-(ωX_i+b)})^2}e^{-(ωX_i+b)}$
+此时，每一个样本的均方误差（MSE）损失函数长成这样：
+$$\operatorname{Loss}_{\text{MSE}} = (a - y)^2 = \left(\frac{1}{1 + e^{-(\omega x + b)}} - y\right)^2$$
 
+根据微积分的链式法则，我们对权重 $\omega$ 求偏导数，观察误差信号是如何倒回去的：
+$$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial \omega} = \frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial a} \cdot \frac{\partial a}{\partial z} \cdot \frac{\partial z}{\partial \omega}$$
 
+把各项的导数分别算出来代入：
+- $\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial a} = 2(a - y)$ （代表预测值与真实值之间的绝对误差）
+- $\frac{\partial a}{\partial z} = \sigma'(z)$ （Sigmoid 函数自身的导数）
+- $\frac{\partial z}{\partial \omega} = x$
+
+把它们乘起来（去掉前面的常数系数 2 只相当于缩放了学习率，不影响梯度的整体方向），最终的梯度公式为：
+$$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial \omega} = (a - y) \cdot \sigma'(z) \cdot x$$
+
+对偏置 $b$ 求偏导同理可得：
+$$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial b} = (a - y) \cdot \sigma'(z)$$
 
 听起来很完美对吧？但对硬件工程师来说，这无异于在电路板上接反了正负极——**它在数学上会发生极其恐怖的“电压被死死锁死”的现象（非凸优化与梯度消失）。**
 
-我们来看看用梯度下降更新权重 $\omega$ 时，误差信号是如何顺着链式法则倒回去的：（这里我用σ表示激活函数，可以少写很多字母）
-$$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial \omega} = (a - y) \cdot \sigma'(z) \cdot x$$
-
 秘密就藏在中间这个 **$\sigma'(z)$（Sigmoid 的导数）** 身上。
 
-请仔细盯着上面那个平滑的 Sigmoid 图像：当设备处于绝对安全（$z$ 很大）或者严重短路（$z$ 很小）的远端时，函数曲线变得**极其平坦**，几乎是一条水平线。
+请仔细盯着上面那个平滑的 Sigmoid 图像：当设备处于绝对安全（$z$ 很大）或者严重短路（$z$ 倒向负无穷）的远端饱和区时，函数曲线变得**极其平坦**，几乎是一条水平线。
 
 在数学上，水平线的导数（斜率）趋近于 **0**。
 
@@ -63,9 +75,10 @@ $$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial \omega} = (a - y) \c
 1. 误差 $(a - y) \approx 1$，明明错得离谱，急需大幅度调整权重！
 2. 然而，因为 $a$ 处于远端饱和区，算出来的 $\sigma'(z)$ 却极其崩溃地**趋近于 0**。
 
-两个数相乘，0 拥有绝对的抹杀权。最终计算出来的梯度 $\frac{\partial \operatorname{Loss}}{\partial \omega} \approx 0$
+两个数相乘，0 拥有绝对的抹杀权。最终计算出来的梯度 $\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial \omega} \approx 0$。
 
 梯度一归零，梯度下降的小球直接在半山腰的平地上停滞不前。**模型明明猜错了，却因为“傲慢与偏见”陷入了死寂，根本无法自己修正参数。** 这种因为激活函数两端饱和导致模型无法训练的绝症，在深度学习里被称为**梯度消失（Gradient Vanishing）**。
+
 ### demo(使用sigmoid做本例中的激活函数)
 demo的训练数据为：
 ```javascript
@@ -74,7 +87,7 @@ demo的训练数据为：
 ```
 <LogisticRegressionSigmoid :scatter="[ [1.99, 0], [2.04, 0], [2.23, 1], [2.18, 1], [2.33, 0], [2.51, 0], [2.46, 1], [2.56, 1], [2.7, 1], [2.93, 1], [2.96, 1], [3.14, 0], [3.17, 0], [3.33, 0], [3.3, 1], [3.45, 1], [3.56, 1], [3.72, 1], [3.81, 1], [3.98, 0]]"/>
 
-### 破局：改用“天生一对”的交叉熵（Cross Entropy）
+## 破局：改用“天生一对”的交叉熵（Cross Entropy）
 
 为了解决 MSE 配合 Sigmoid 时这种“越错越不练”的僵局，数学家为逻辑回归量身定制了一个新的教官——**交叉熵损失函数（Cross Entropy Loss）**，在二分类任务里，它也叫对数似然损失：
 
@@ -85,13 +98,26 @@ $$\operatorname{Loss}_{\text{CE}} = - \Big( y \ln a + (1 - y) \ln (1 - a) \Big)$
 * **当真实状态是安全时（$y=1$）：** 公式右边那一项直接归零，$\operatorname{Loss} = -\ln a$。如果模型预测安全概率 $a$ 接近 1，损失就是 $-\ln(1) = 0$；如果预测 $a$ 接近 0（明明安全你却报短路），$-\ln(\text{趋近于}0)$ 会瞬间飙升到**正无穷大**，给模型一个极其严厉的惩罚。
 * **当真实状态是短路时（$y=0$）：** 公式左边那一项归零，$\operatorname{Loss} = -\ln(1-a)$。如果模型预测 $a$ 接近 1（明明短路了你还报安全），损失同样会当场爆炸。
 
-更奇妙的是它的数学底牌。当我们再次拿起梯度下降的武器，对这个新 Loss 求偏导时，神奇的事情发生了：
-$$\frac{\partial \operatorname{Loss}_{\text{CE}}}{\partial \omega} = (a - y) \cdot x$$
+更奇妙的是它的数学底牌。当我们再次拿起梯度下降的武器，利用链式法则对这个新 Loss 求偏导时，神奇的事情发生了：
+$$\frac{\partial \operatorname{Loss}_{\text{CE}}}{\partial \omega} = \frac{\partial \operatorname{Loss}_{\text{CE}}}{\partial a} \cdot \frac{\partial a}{\partial z} \cdot \frac{\partial z}{\partial \omega}$$
+
+其中，对 $\operatorname{Loss}_{\text{CE}}$ 求关于 $a$ 的导数得到：
+$$\frac{\partial \operatorname{Loss}_{\text{CE}}}{\partial a} = -\frac{y}{a} + \frac{1-y}{1-a} = \frac{a-y}{a(1-a)}$$
+
+而 Sigmoid 函数的导数性质恰好是：
+$$\frac{\partial a}{\partial z} = \sigma'(z) = a(1-a)$$
+
+把它们代入链式法则乘起来：
+$$\frac{\partial \operatorname{Loss}_{\text{CE}}}{\partial \omega} = \frac{a-y}{a(1-a)} \cdot a(1-a) \cdot x$$
 
 看啊！那个让人恨之入骨的 $\sigma'(z)$ 竟然在复杂的代数化简中，**被分子分母神奇地完全约掉了**！
 
-最终的梯度只取决于 $(a - y)$——也就是**“预测值与真实值之间的绝对误差”**。
+最终的梯度只取决于 $(a - y)$——也就是**“预测值与真实值之间的绝对误差”**：
+$$\frac{\partial \operatorname{Loss}_{\text{CE}}}{\partial \omega} = (a - y) \cdot x$$
+
 * 错得越离谱，误差 $(a-y)$ 就越大，梯度就越陡，小球下滑更新的速度就越快！
 * 猜得越准，误差就越小，小球就自然缓缓停下。
 
 通过改用交叉熵，我们不仅完美实现了分类的惩罚机制，还彻底斩断了梯度消失的紧箍咒，让梯度下降真正能够愉快地奔跑起来。
+
+在不同的任务中，选择不同的激活函数和损失函数，可以让我们的的训练如虎添翼
