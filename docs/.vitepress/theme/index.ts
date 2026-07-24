@@ -6,6 +6,7 @@ import LeastSquaresMethod from './components/LeastSquaresMethod.vue';
 import GradientDescent from './components/GradientDescent.vue';
 import FunctionChart from './components/FunctionChart.vue';
 import LogisticRegressionSigmoid from './components/LogisticRegressionSigmoid.vue';
+import MLP_demo from './components/MLP_demo.vue';
 
 /** @type {import('vitepress').Theme} */
 export default {
@@ -18,5 +19,6 @@ export default {
         app.component('GradientDescent', GradientDescent);
         app.component('FunctionChart', FunctionChart);
         app.component('LogisticRegressionSigmoid', LogisticRegressionSigmoid);
+        app.component('MLPDemo', MLP_demo);
     },
 };
