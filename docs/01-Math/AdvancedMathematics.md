@@ -130,7 +130,7 @@ $$\lim\limits_{Δx \to 0}\frac{f(x_0+Δx,y_0)-f(x_0,y_0)}{Δx}$$
 
 ### 示例：马鞍面 ($z=x^2-y^2$) 和 $y=-0.5$ 相交得到一条曲线
 
-<BiFunctionEcharts :exprs="[{x:'u',y:'v',z:'u^2-v^2'},{x:'u',y:'-0.5',z:'v'}]" title="双曲抛物面 z = x² - y²和y=-0.5"/>
+<BiFunctionEcharts :exprs="[{x:'u',y:'v',z:'u^2-v^2'},{x:'u',y:'-0.5',z:'v'}]" :title="'双曲抛物面 z = x² - y²和y=-0.5'"/>
 
 ## 全微分
 
@@ -167,7 +167,7 @@ _这里是硬性定义的全微分公式，和一元函数类似，函数增量�
 >
 > 考虑到第二部分 $f(x, y+\Delta y) - f(x, y)$（需要注意的是，这里的 $Δx=0$ 只是一个特例，实际上下面的推导在任意$Δx \to 0$，$Δy \to 0$ 时都成立）
 > 因为偏导数 $f_{y}$ 连续，根据连续性，当 $Δx \to 0$，$Δy \to 0$ 时，它产生的差值函数 $n \to 0$。
-> 同样我们可以将这一步的增量写为：$f(x,y+\Delta y)-f(x,y)=f\_{y}(x,y)\Delta y+n\Delta y$
+> 同样我们可以将这一步的增量写为：$f(x,y+\Delta y)-f(x,y)=f_{y}(x,y)\Delta y+n\Delta y$
 >
 > 通过刚刚的推导，我们得到：
 > $Δz=f_x(x,y)Δx+mΔx+f_y(x,y)Δy+n(Δy)$ ，且当 $Δx \to 0$ 和 $Δy \to 0$ 时有 $m \to 0$ $n \to 0$
@@ -252,6 +252,22 @@ $\dfrac{\partial z}{\partial y}=\dfrac{\partial z}{\partial u}\dfrac{\partial u}
     1. $Δz=\dfrac{\partial z}{\partial u}Δu+\dfrac{\partial z}{\partial v}Δv$
 2. 对前面的式子中每一个“微元” $Δ$ 继续拆分，直至达到目标偏导数
 3. 最后两边同时除以目标 $Δ$
+
+题外话：同济大学的高数课本偷懒了，上面证明需要偏导数连续，如果函数在某点可微，但是偏导数不连续（比如高频振荡），则无法用上面的步骤证明。
+
+设函数 $z=f(u,v)$，$u=u(x,y)$，$v=v(x,y)$ ，如果 $z$、$u$、$v$ 在 $(x,y)$ 处可微，则同样有 $\dfrac{\partial z}{\partial x}=\dfrac{\partial z}{\partial u}\dfrac{\partial u}{\partial x}+\dfrac{\partial z}{\partial v}\dfrac{\partial v}{\partial x}$
+**证**：
+
+> 因为 $z$、$u$、$v$, 可微，则有
+> $Δz=\dfrac{\partial z}{\partial u}Δu+\dfrac{\partial z}{\partial v}Δv+o(\sqrt{Δu^2+Δv^2})$
+> 两边同时除以 $Δx$ 得
+> $\dfrac{Δz}{Δx}=\dfrac{\partial z}{\partial u}\dfrac{Δu}{Δx}+\dfrac{\partial z}{\partial v}\dfrac{Δv}{Δx}+\dfrac{o(\sqrt{Δu^2+Δv^2})}{Δx}$
+> 因为计算偏导数的时候，$Δy=0$，且 $u$、$v$ 可微，则有 $Δx \to 0$ 时 $Δu=u_xΔx+αΔx$ 和 $Δv=v_xΔx+βΔx$，其中 $α$ 和 $β$ 是无穷小。
+> 上面根号里面的内容则可以写为 $ρ=|Δx| \sqrt{(u_x+α)^2+(v_x+β)^2}$
+> 因为 $\lim\limits_{Δx \to 0,Δy=0}\sqrt{(u_x+α)^2+(v_x+β)^2}=C$（C是常数）
+> 得到在 $Δx \to 0,Δy=0$ 时 $ρ$ 是 $Δx$ 的同阶无穷小
+> 所以 $o(ρ)$ 是 $Δx$ 的高阶无穷小
+> 所以得到$\lim\limits_{Δx \to 0,Δy=0}\dfrac{Δz}{Δx}=\dfrac{\partial z}{\partial u}\dfrac{\partial u}{\partial x}+\dfrac{\partial z}{\partial v}\dfrac{\partial v}{\partial x}$
 
 ## 下一步
 

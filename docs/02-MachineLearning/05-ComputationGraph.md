@@ -120,6 +120,10 @@ $Δz_4=\dfrac{\partial z_4}{\partial h_1}Δh_1 + \dots$
 
 $\dfrac{\partial L}{\partial ω_{11}}=\dfrac{\partial L}{\partial a}\dfrac{\partial a}{\partial z_a}\left(\dfrac{\partial z_a}{\partial h_3}\dfrac{\partial h_3}{\partial z_3}\dfrac{\partial z_3}{\partial h_1}+\dfrac{\partial z_a}{\partial h_4}\dfrac{\partial h_4}{\partial z_4}\dfrac{\partial z_4}{\partial h_1}\right)\dfrac{\partial h_1}{\partial z_1}\dfrac{\partial z_1}{\partial ω_{11}}$
 
+$\dfrac{\partial L}{\partial ω_{12}}=\dfrac{\partial L}{\partial a}\dfrac{\partial a}{\partial z_a}\left(\dfrac{\partial z_a}{\partial h_3}\dfrac{\partial h_3}{\partial z_3}\dfrac{\partial z_3}{\partial h_1}+\dfrac{\partial z_a}{\partial h_4}\dfrac{\partial h_4}{\partial z_4}\dfrac{\partial z_4}{\partial h_1}\right)\dfrac{\partial h_1}{\partial z_1}\dfrac{\partial z_1}{\partial ω_{12}}$
+
+$\dfrac{\partial L}{\partial b_1}=\dfrac{\partial L}{\partial a}\dfrac{\partial a}{\partial z_a}\left(\dfrac{\partial z_a}{\partial h_3}\dfrac{\partial h_3}{\partial z_3}\dfrac{\partial z_3}{\partial h_1}+\dfrac{\partial z_a}{\partial h_4}\dfrac{\partial h_4}{\partial z_4}\dfrac{\partial z_4}{\partial h_1}\right)\dfrac{\partial h_1}{\partial z_1}\dfrac{\partial z_1}{\partial b_1}$
+
 ## 偏导数的通用规律总结
 
 对比上面的结果，我们把前缀公式提取出来：
@@ -141,6 +145,8 @@ $δ_a=\dfrac{\partial L}{\partial a}\dfrac{\partial a}{\partial z_a}=\dfrac{\par
 
 $δ_3=δ_a\dfrac{\partial z_a}{\partial h_3}\dfrac{\partial h_3}{\partial z_3}=\dfrac{\partial L}{\partial z_3}$
 
+$δ_4=δ_a\dfrac{\partial z_a}{\partial h_4}\dfrac{\partial h_4}{\partial z_4}=\dfrac{\partial L}{\partial z_4}$
+
 $δ_1 = \left(\delta_3 \dfrac{\partial z_3}{\partial h_1} + \delta_4 \dfrac{\partial z_4}{\partial h_1}\right)\dfrac{\partial h_1}{\partial z_1} = \dfrac{\partial L}{\partial z_1}$
 
 有了**敏感度 $\delta$**，所有参数的偏导计算瞬间变得清爽无比：
@@ -156,20 +162,58 @@ $$\dfrac{\partial L}{\partial ω_{11}} = \delta_1 x_1$$
 总结一下，对计算图中的任意节点 $h$，求解参数梯度的通式为：
 
 1. **计算自身敏感度 $\delta$**（假定所有由 $h$ 直接连向的下游节点 $i$ 的敏感度 $\delta_i$ 已经计算完毕）：
-   $$\delta =\left(\sum _{i}\delta _{i}\dfrac{\partial z_{i}}{\partial h}\right)\dfrac{\partial h}{\partial z}$$
+   $$\delta =\dfrac{\partial L}{\partial z}=\left(\sum _{i}\delta _{i}\dfrac{\partial z_{i}}{\partial h}\right)\dfrac{\partial h}{\partial z}$$
 
-    > $\delta_i$ 是下游直连节点的敏感度，$\dfrac{\partial z_{i}}{\partial h}$ 是下游节点内部输出对自己输出的偏导，$\dfrac{\partial h}{\partial z}$ 是自身激活函数的导数。
+    > $\delta_i$ 是下游直连节点的敏感度，$\dfrac{\partial z_{i}}{\partial h}$ 是下游节点 $i$ 激活前的内部状态 $z_i$ 对当前节点输出 $h$ 的偏导，$\dfrac{\partial h}{\partial z}$ 是自身激活函数的导数。
 
 2. **计算自身参数的偏导数**：
    $$\dfrac{\partial L}{\partial ω}=δ\dfrac{\partial z}{\partial ω}$$
     > $\dfrac{\partial z}{\partial ω}$ 是节点内部函数对参数的偏导数。
 
-只要计算图是一个有向无环图（DAG），依靠这个通用流程，无论节点内部采用什么计算公式，我们都能顺藤摸瓜求出每一个参数的梯度。
+只要计算图是一个有向无环图（DAG），依靠这个通用流程，无论各个图元连接多么复杂，无论节点内部采用什么计算公式，我们都能顺藤摸瓜求出每一个参数的梯度。
 
-## 在线实验：亲眼见证空间的非线性合围
+## 交互式演示
 
-我们在网页端用纯 JavaScript 搭建了一张由节点直接连成的计算图，没有借助任何现成的框架。下面我们用它来处理一个经典难题：**区分圆内与圆外的二维数据点**（即拟合 $x_1^2 + x_2^2 < r^2$ 的非线性边界）。
+把上面这套机制放进一个**可直接运行的交互组件**：用「邻接矩阵自动构造 + 前向传播 → 反向传播 → 梯度下降」，训练一个多层计算图，学会判断平面上的点 $(x, y)$ 属于「圆内」还是「圆外」（以 $r_1$、$r_2$ 为内外半径，两者之间是带概率标注的模糊带）。
 
-单层线性拟合在二维平面上只能画出一道直线，永远不可能把圆内和圆外切开。而通过构建计算图，多个节点各自在空间中拉出平滑的非线性边界并进行组合，最终将在二维平面上**合围出一个封闭的圆形决策区域**！
+下面是一个 $2$ 节点宽、$3$ 层深（`dense(2, 3)`）网络的**示意结构**——图中省略了偏置，但每个节点实际都带有一组参数 $\set{\omega_1,\dots,\omega_k,\ b}$：
 
-<GraphDemo/>
+```mermaid
+            flowchart LR
+                I1((x))
+                I2((y))
+                A((A))
+                B((B))
+                C((C))
+                D((D))
+                E((E))
+                F((F))
+                O((out))
+
+                I1 --> A
+                I2 --> A
+                I1 --> B
+                I2 --> B
+                A --> C
+                A --> D
+                B --> C
+                B --> D
+                C --> E
+                C --> F
+                D --> E
+                D --> F
+                F --> O
+                E --> O
+```
+
+- **任务数据**：按圆内 / 模糊带 / 圆外分层采样各约 1/3，避免圆内面积太小导致监督样本过少；
+- **参数区**：可调整网络宽度/深度、样本数、学习率、训练轮数、内外半径（默认 `dense(8, 2)`、800 样本、300 轮、lr 0.3）；
+- **运行**：训练放在Web Worker 后台线程执行，界面不会卡顿；实时打印每个阶段的平均损失（该轮全部样本交叉熵的平均值）；
+- **结果**：训练结束后给出测试集准确率，并绘制一张“预测圆外概率”热力图（蓝：圆内，红：判为圆外），白色虚线圆环标示真实的 $r_1 / r_2$ 边界；
+- **注意**：每次运行都会重新随机初始化网络参数并重新生成训练数据，因此结果存在波动，属正常现象。
+
+<GraphDemo />
+
+> 该组件 `GraphDemo.vue` 内置了本文描述的完整实现：`GNode`（敏感度 $\delta$）、**邻接矩阵自动装配**、sigmoid + 交叉熵、批次缓存与梯度下降；核心计算逻辑封装在 `graphWorker.ts`（Web Worker）中，因此即使把网络调得很大，页面交互也不会卡死。
+>
+> 可以试着调大隐藏层宽度、调小学习率或者增加学习样本数量，观察平均损失下降的平滑度、以及热力图中边界清晰度的变化。
