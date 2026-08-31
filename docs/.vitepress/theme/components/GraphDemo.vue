@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted } from 'vue'
+import GraphWorkerCtor from './graphWorker.ts?worker' // Vite 会把 TS worker 打包成独立 .js chunk
 
 /* 计算图核心与训练循环已移到 Web Worker（./graphWorker.ts）中执行，
    避免训练重计算阻塞主线程（UI 卡死）。主线程只负责：
@@ -72,7 +73,6 @@ const heat = ref<HTMLCanvasElement | null>(null);
 const colorbar = ref<HTMLCanvasElement | null>(null);
 
 // 训练放在 Web Worker 中执行，避免阻塞主线程（UI 卡死）
-const workerUrl = new URL('./graphWorker.ts', import.meta.url);
 let worker: Worker | null = null;
 
 onUnmounted(() => {
@@ -87,9 +87,10 @@ function run() {
     heatmap.value = null;
     log.value = '';
 
-    worker = new Worker(workerUrl, { type: 'module' });
+    const w = new GraphWorkerCtor();
+    worker = w;
 
-    worker.onmessage = (e: MessageEvent) => {
+    w.onmessage = (e: MessageEvent) => {
         const msg = e.data as { type: string; text?: string; acc?: number; heatmap?: number[]; message?: string };
         if (msg.type === 'progress' && msg.text) {
             log.value += msg.text; // 训练日志实时追加
@@ -105,12 +106,12 @@ function run() {
             running.value = false;
         }
     };
-    worker.onerror = (e) => {
+    w.onerror = (e) => {
         log.value += `❌ Worker 出错：${e.message}\n`;
         running.value = false;
     };
 
-    worker.postMessage({ type: 'train', value: { ...cfg.value } });
+    w.postMessage({ type: 'train', value: { ...cfg.value } });
 }
 
 /** 用 Worker 返回的概率数组绘制热力图（蓝=圆内 → 红=圆外） */
