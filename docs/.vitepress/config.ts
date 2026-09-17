@@ -25,7 +25,7 @@ export default withMermaid({
                         include: ['dayjs', 'mermaid'],
                     },
                     ssr: {
-                        noExternal: ['dayjs', 'mermaid', 'vitepress-plugin-mermaid']
+                        noExternal: ['dayjs', 'mermaid', 'vitepress-plugin-mermaid'],
                     },
                     // 👆 新增结束
                     plugins: [
@@ -34,14 +34,9 @@ export default withMermaid({
                             configureServer(server) {
                                 server.watcher.on('change', (file) => {
                                     if (file.endsWith('.md')) {
-                                        const siteDataModule =
-                                            server.moduleGraph.getModuleById(
-                                                '\0@siteData',
-                                            );
+                                        const siteDataModule = server.moduleGraph.getModuleById('\0@siteData');
                                         if (siteDataModule) {
-                                            server.moduleGraph.invalidateModule(
-                                                siteDataModule,
-                                            );
+                                            server.moduleGraph.invalidateModule(siteDataModule);
                                             server.reloadModule(siteDataModule);
                                         }
                                     }
@@ -62,6 +57,8 @@ export default withMermaid({
             },
         ),
     ),
+    base: '/ML/',
+    title: '我的文档',
     mermaid: {
         //mermaidConfig !theme here works for ligth mode since dark theme is forced in dark mode
     },
