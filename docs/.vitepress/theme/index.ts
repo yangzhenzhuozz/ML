@@ -7,7 +7,9 @@ import GradientDescent from './components/GradientDescent.vue';
 import FunctionChart from './components/FunctionChart.vue';
 import LogisticRegressionSigmoid from './components/LogisticRegressionSigmoid.vue';
 import GraphDemo from './components/GraphDemo.vue';
-
+import GPUMatrix from './components/GPUMatrix.vue';
+import GPUMlp from './components/GPUMlp.vue';
+import GPUMlpBatch from './components/GPUMlpBatch.vue';
 /** @type {import('vitepress').Theme} */
 export default {
     extends: DefaultTheme,
@@ -20,5 +22,8 @@ export default {
         app.component('FunctionChart', FunctionChart);
         app.component('LogisticRegressionSigmoid', LogisticRegressionSigmoid);
         app.component('GraphDemo', GraphDemo);
+        app.component('GPUMatrix', GPUMatrix);
+        app.component('GPUMlp', GPUMlp);
+        app.component('GPUMlpBatch', GPUMlpBatch);
     },
 };

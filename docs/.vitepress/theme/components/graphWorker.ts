@@ -217,6 +217,7 @@ self.addEventListener('message', (e: MessageEvent<WorkerMessage>) => {
         post({ type: 'progress', text: `网络 dense(${width}, ${depth})  样本 ${samples}  lr ${lr}  epochs ${epochs}\n` });
 
         const chunk = Math.max(1, Math.floor(epochs / 40)); // 约 40 条进度日志
+        const t0 = performance.now(); // 训练计时起点
         for (let epoch = 0; epoch < epochs; epoch++) {
             // 打乱样本顺序
             for (let i = data.length - 1; i > 0; i--) {
@@ -235,6 +236,7 @@ self.addEventListener('message', (e: MessageEvent<WorkerMessage>) => {
                 post({ type: 'progress', text: `epoch ${String(epoch).padStart(4)}  平均损失 = ${(epochLoss / data.length).toFixed(4)}\n` });
             }
         }
+        const trainMs = performance.now() - t0; // 纯训练循环耗时
 
         // 用一组新样本评估准确率
         const test = dataGen(r1, r2, samples);
@@ -258,7 +260,7 @@ self.addEventListener('message', (e: MessageEvent<WorkerMessage>) => {
             }
         }
 
-        post({ type: 'done', acc, heatmap });
+        post({ type: 'done', acc, heatmap, trainMs });
     } catch (err) {
         post({ type: 'error', message: String(err) });
     }

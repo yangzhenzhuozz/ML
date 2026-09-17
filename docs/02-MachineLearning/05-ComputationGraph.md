@@ -164,7 +164,8 @@ $$\dfrac{\partial L}{\partial ω_{11}} = \delta_1 x_1$$
 1. **计算自身敏感度 $\delta$**（假定所有由 $h$ 直接连向的下游节点 $i$ 的敏感度 $\delta_i$ 已经计算完毕）：
    $$\delta =\dfrac{\partial L}{\partial z}=\left(\sum _{i}\delta _{i}\dfrac{\partial z_{i}}{\partial h}\right)\dfrac{\partial h}{\partial z}$$
 
-    > $\delta_i$ 是下游直连节点的敏感度，$\dfrac{\partial z_{i}}{\partial h}$ 是下游节点 $i$ 激活前的内部状态 $z_i$ 对当前节点输出 $h$ 的偏导，$\dfrac{\partial h}{\partial z}$ 是自身激活函数的导数。
+    > 1. $\delta_i$ 是下游直连节点的敏感度，$\dfrac{\partial z_{i}}{\partial h}$ 是下游节点 $i$ 激活前的内部状态 $z_i$ 对当前节点输出 $h$ 的偏导，$\dfrac{\partial h}{\partial z}$ 是自身激活函数的导数。
+    > 2. 输出节点也是计算节点，只是没有下游节点，因此上面的求和公式对它不适用，需要直接用定义$\delta =\dfrac{\partial L}{\partial z}$ 计算敏感度。
 
 2. **计算自身参数的偏导数**：
    $$\dfrac{\partial L}{\partial ω}=δ\dfrac{\partial z}{\partial ω}$$
@@ -176,7 +177,7 @@ $$\dfrac{\partial L}{\partial ω_{11}} = \delta_1 x_1$$
 
 把上面这套机制放进一个**可直接运行的交互组件**：用「邻接矩阵自动构造 + 前向传播 → 反向传播 → 梯度下降」，训练一个多层计算图，学会判断平面上的点 $(x, y)$ 属于「圆内」还是「圆外」（以 $r_1$、$r_2$ 为内外半径，两者之间是带概率标注的模糊带）。
 
-下面是一个 $2$ 节点宽、$3$ 层深（`dense(2, 3)`）网络的**示意结构**——图中省略了偏置，但每个节点实际都带有一组参数 $\set{\omega_1,\dots,\omega_k,\ b}$：
+下面是一个宽度 $2$、深度 $3$ 的 `dense(2, 3)` 网络（输入 $2$ 节点 → 隐藏 $3$ 层（每层 $2$ 节点）→ 输出 $1$ 节点，共 $9$ 个节点）的示意结构——图中展示的是节点之间的**连接拓扑**；每个节点内部实际执行 $z=\sum_i \omega_i h_i + b$，使用了 $\operatorname{sigmoid}$ 作为激活函数，使用交叉熵损失作为损失函数：
 
 ```mermaid
             flowchart LR
@@ -212,8 +213,6 @@ $$\dfrac{\partial L}{\partial ω_{11}} = \delta_1 x_1$$
 - **结果**：训练结束后给出测试集准确率，并绘制一张“预测圆外概率”热力图（蓝：圆内，红：判为圆外），白色虚线圆环标示真实的 $r_1 / r_2$ 边界；
 - **注意**：每次运行都会重新随机初始化网络参数并重新生成训练数据，因此结果存在波动，属正常现象。
 
-<GraphDemo />
-
-> 该组件 `GraphDemo.vue` 内置了本文描述的完整实现：`GNode`（敏感度 $\delta$）、**邻接矩阵自动装配**、sigmoid + 交叉熵、批次缓存与梯度下降；核心计算逻辑封装在 `graphWorker.ts`（Web Worker）中，因此即使把网络调得很大，页面交互也不会卡死。
->
 > 可以试着调大隐藏层宽度、调小学习率或者增加学习样本数量，观察平均损失下降的平滑度、以及热力图中边界清晰度的变化。
+
+<GraphDemo />

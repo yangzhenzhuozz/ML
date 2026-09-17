@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true
+  },
+  "include": [".vitepress/theme/**/*"]
+}
