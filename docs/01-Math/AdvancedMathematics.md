@@ -269,6 +269,13 @@ $\dfrac{\partial z}{\partial y}=\dfrac{\partial z}{\partial u}\dfrac{\partial u}
 > 所以 $o(ρ)$ 是 $Δx$ 的高阶无穷小
 > 所以得到$\lim\limits_{Δx \to 0,Δy=0}\dfrac{Δz}{Δx}=\dfrac{\partial z}{\partial u}\dfrac{\partial u}{\partial x}+\dfrac{\partial z}{\partial v}\dfrac{\partial v}{\partial x}$
 
-## 下一步
+### 复合函数的某些中间变量本身又是复合函数的自变量
+
+如果有 $z=f(x,y,u)$，并且 $u=u(x,y)$，这时候我们可以换元，令 $x=a(s)$，$y=b(t)$，$u=u(s,t)$，则有：
+$$\dfrac{\partial z}{\partial s}=\dfrac{\partial z}{\partial a}\dfrac{\partial a}{\partial s}+\dfrac{\partial z}{\partial b}\dfrac{\partial b}{\partial s}+\dfrac{\partial z}{\partial u}\dfrac{\partial u}{\partial s}$$
+
+**需要注意**：换元后，变量体系发生了改变。原来的 $u$ 是以 $(x,y)$ 为自变量的函数；换元后，将复合关系吸收到 $u(s,t)$ 中，此时 $s,t$ 成为新的底层自变量，$a,b,u$ 都是由 $(s,t)$ 直接确定的函数。因此，在当前变量体系下，应分别考察 $a,b,u$ 随 $s,t$ 的变化，而不必再把 $u$ 的变化理解为“先改变 $a,b$，再改变 $u$”。
+
+## 小记
 
 在神经网络中，损失函数对权重的偏导数构成梯度，反向传播正是利用链式法则（复合函数求导）逐层计算梯度，再用梯度下降（沿负梯度方向更新参数）来最小化损失。

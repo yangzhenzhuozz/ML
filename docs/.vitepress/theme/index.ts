@@ -10,6 +10,7 @@ import GraphDemo from './components/GraphDemo.vue';
 import GPUMatrix from './components/GPUMatrix.vue';
 import GPUMlp from './components/GPUMlp.vue';
 import GPUMlpBatch from './components/GPUMlpBatch.vue';
+import GPUSkipBatch from './components/GPUSkipBatch.vue';
 /** @type {import('vitepress').Theme} */
 export default {
     extends: DefaultTheme,
@@ -25,5 +26,6 @@ export default {
         app.component('GPUMatrix', GPUMatrix);
         app.component('GPUMlp', GPUMlp);
         app.component('GPUMlpBatch', GPUMlpBatch);
+        app.component('GPUSkipBatch', GPUSkipBatch);
     },
 };

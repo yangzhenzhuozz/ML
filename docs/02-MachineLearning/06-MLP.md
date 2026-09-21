@@ -1,4 +1,4 @@
-# 多层感知机 Multilayer Perceptron
+# 多层感知机(MLP)
 
 ## 通用可微前馈网络
 
