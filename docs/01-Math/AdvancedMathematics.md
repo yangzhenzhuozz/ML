@@ -274,7 +274,8 @@ $\dfrac{\partial z}{\partial y}=\dfrac{\partial z}{\partial u}\dfrac{\partial u}
 如果有 $z=f(x,y,u)$，并且 $u=u(x,y)$，这时候我们可以换元，令 $x=a(s)$，$y=b(t)$，$u=u(s,t)$，则有：
 $$\dfrac{\partial z}{\partial s}=\dfrac{\partial z}{\partial a}\dfrac{\partial a}{\partial s}+\dfrac{\partial z}{\partial b}\dfrac{\partial b}{\partial s}+\dfrac{\partial z}{\partial u}\dfrac{\partial u}{\partial s}$$
 
-**需要注意**：换元后，变量体系发生了改变。原来的 $u$ 是以 $(x,y)$ 为自变量的函数；换元后，将复合关系吸收到 $u(s,t)$ 中，此时 $s,t$ 成为新的底层自变量，$a,b,u$ 都是由 $(s,t)$ 直接确定的函数。因此，在当前变量体系下，应分别考察 $a,b,u$ 随 $s,t$ 的变化，而不必再把 $u$ 的变化理解为“先改变 $a,b$，再改变 $u$”。
+**需要注意**：换元后，变量体系发生了改变。原来的 $u$ 是以 $(x,y)$ 为自变量的函数；换元后，将复合关系吸收到 $u(s,t)$ 中，此时 $s,t$ 成为新的底层自变量，$a,b,u$ 都是由 $(s,t)$ 直接确定的函数。因此，在当前变量体系下，应分别考察 $a,b,u$ 随 $s,t$ 的变化。此时，$u$ 由 $s,t$ 直接驱动，而不是由 $a,b$ 的函数值驱动。
+
 
 ## 小记
 
