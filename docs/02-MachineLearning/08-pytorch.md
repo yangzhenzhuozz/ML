@@ -79,10 +79,13 @@ flowchart TD
 | mul      | $v_2$                             | $v_1$                             | $(g v_2,\ g v_1)$ |
 
 mul 的局部导数用的是 $v_1$、$v_2$ 在前向时的取值，同时还需要特别**注意**：当一个节点被使用多次的时候，如图中的一个 $\text{mul}$ 节点，我们需要把每次传播的梯度值累加，从数学上很容易理解，设 $y=f(x,x)$，我们可以把两个 $x$ 分别换元成 $x_1$、$x_2$，则有：
-$$\begin{aligned}
+
+$$
+\begin{aligned}
   y & =f(x_1,x_2) \\
-  dy & =\dfrac{\partial f}{\partial x_1}dx_1+\dfrac{\partial f}{\partial x_2}dx_2  
-\end{aligned}$$
+  dy & =\dfrac{\partial f}{\partial x_1}dx_1+\dfrac{\partial f}{\partial x_2}dx_2
+\end{aligned}
+$$
 
 最后再令 $x_1=x_2=x$，此时 $\dfrac{dx_1}{dx}=\dfrac{dx_2}{dx}=1$，于是
 $$\frac{dy}{dx}=\frac{\partial f}{\partial x_1}+\frac{\partial f}{\partial x_2}$$
@@ -137,4 +140,191 @@ flowchart TD
 
 $$y = ax_1+ax_1+bx_2 \quad \Rightarrow\quad \frac{\partial y}{\partial a}=2x_1=6,\quad \frac{\partial y}{\partial x_1}=2a=2$$
 
-相比第 5 章，我们只做了一个微调，禁止用户自己写边的连接函数，必须使用我们设定的初等函数算子，接下来就直接起飞，再也不用小心翼翼的设置每个节点计算函数和导数了。
+相比第 5 章，我们只做了一个微调，禁止用户自己写边的连接函数，必须使用我们设定的初等函数算子，接下来就直接起飞，再也不用小心翼翼的设置每个节点计算函数和导数了。在实际工程的实践中，是允许用户自定义算子的，但是需要对每个定义的算子设置好导数公式。
+
+## 计算图的进阶：矩阵算子
+
+前面我们定义的都是标量算子，但是在机器学习中，我们经常会需要对向量、矩阵进行计算，向量计算可以抽象成一维矩阵。所以我们还需要针对矩阵定义以下三类算子：
+
+1. 逐元素算子：依次对矩阵中的每一个元素进行初等函数运算
+2. 矩阵乘法算子：进行矩阵乘法
+3. 形状/归约算子：对矩阵进行变形，比如转置、累加等
+
+### 逐元素算子
+
+顾名思义，就是对矩阵中的每一个元素进行计算，比如
+
+数乘：
+
+$$2 \times \begin{bmatrix}1 & 2\\3 & 4\end{bmatrix}=\begin{bmatrix}2 & 4\\6 & 8\end{bmatrix}$$
+
+逐元素相乘：
+
+$$
+\begin{bmatrix}1&2\\3&4\end{bmatrix}
+\odot
+\begin{bmatrix}5&6\\7&8\end{bmatrix}
+=
+\begin{bmatrix}5&12\\21&32\end{bmatrix}
+$$
+
+对于矩阵的逐元素算子，处理方法很简单，不管是前向传播还是反向传播，我们都可以当初前面计算图中的标量情况处理，当成有矩阵元素这么多个独立DAG处理即可，因为这些DAG相互独立并且结构一致，可以用并行硬件加速计算。
+
+### 矩阵乘法算子
+
+设有一个矩阵A $[m \times n]$ 和一个矩阵B $[n \times p]$，则两个矩阵相乘的前向传播公式为：
+
+$$
+A \times B=
+\begin{bmatrix}
+a_{11} & a_{12} & \cdots & a_{1n}\\
+a_{21} & a_{22} & \cdots & a_{2n}\\
+\vdots & \vdots & \ddots & \vdots\\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{bmatrix}
+\times
+\begin{bmatrix}
+b_{11} & b_{12} & \cdots & b_{1p}\\
+b_{21} & b_{22} & \cdots & b_{2p}\\
+\vdots & \vdots & \ddots & \vdots\\
+b_{n1} & b_{n2} & \cdots & b_{np}
+\end{bmatrix}
+=
+\begin{bmatrix}
+\sum_{k=1}^{n}a_{1k}b_{k1} & \sum_{k=1}^{n}a_{1k}b_{k2} & \cdots & \sum_{k=1}^{n}a_{1k}b_{kp}\\
+\sum_{k=1}^{n}a_{2k}b_{k1} & \sum_{k=1}^{n}a_{2k}b_{k2} & \cdots & \sum_{k=1}^{n}a_{2k}b_{kp}\\
+\vdots & \vdots & \ddots & \vdots\\
+\sum_{k=1}^{n}a_{mk}b_{k1} & \sum_{k=1}^{n}a_{mk}b_{k2} & \cdots & \sum_{k=1}^{n}a_{mk}b_{kp}
+\end{bmatrix}
+=C
+$$
+
+看起来似乎很复杂，其实真正涉及的计算就只有加法和乘法，设结果矩阵的梯度矩阵为：
+
+$$
+G=\begin{bmatrix}
+g_{11} & \cdots & g_{1p} \\
+\vdots & \ddots & \vdots \\
+g_{m1} & \cdots & g_{mp}
+\end{bmatrix}
+$$
+
+这样看起来可能太抽象了，我们用一个具体的矩阵示例一下：
+
+$$
+\begin{bmatrix}
+    a_{11} & a_{12} & a_{13} \\
+    a_{21} & a_{22} & a_{23} \\
+\end{bmatrix}
+\times
+\begin{bmatrix}
+b_{11} & b_{12} \\
+b_{21} & b_{22} \\
+b_{31} & b_{32}
+\end{bmatrix}
+=
+\begin{bmatrix}
+    a_{11}b_{11}+a_{12}b_{21}+a_{13}b_{31} & a_{11}b_{12}+a_{12}b_{22}+a_{13}b_{32} \\
+    a_{21}b_{11}+a_{22}b_{21}+a_{23}b_{31} & a_{21}b_{12}+a_{22}b_{22}+a_{23}b_{32}
+\end{bmatrix}
+$$
+
+结果矩阵的梯度矩阵为：
+
+$$
+\begin{bmatrix}
+    \dfrac{\partial \text{out}}{\partial c_{11}} & \dfrac{\partial \text{out}}{\partial c_{12}}\\
+    \dfrac{\partial \text{out}}{\partial c_{21}} & \dfrac{\partial \text{out}}{\partial c_{22}}
+\end{bmatrix}
+=
+\begin{bmatrix}
+    g_{11} & g_{12} \\
+    g_{21} & g_{22}
+\end{bmatrix}
+$$
+
+我们挑选 $a_{23}$ 和 $b_{31}$ 作为计算例子，则有
+
+$$
+\begin{aligned}
+\dfrac{\partial \text{out}}{\partial a_{23}}=\dfrac{\partial \text{out}}{\partial c_{21}}\dfrac{{\partial c_{21}}}{\partial a_{23}}+\dfrac{\partial \text{out}}{\partial c_{22}}\dfrac{{\partial c_{22}}}{\partial a_{23}}=g_{21}b_{31}+g_{22}b_{32}
+\\
+\dfrac{\partial \text{out}}{\partial b_{31}}=\dfrac{\partial \text{out}}{\partial c_{11}}\dfrac{{\partial c_{11}}}{\partial b_{31}}+\dfrac{\partial \text{out}}{\partial c_{21}}\dfrac{{\partial c_{21}}}{\partial b_{31}}=g_{11}a_{13}+g_{21}a_{23}
+\end{aligned}
+$$
+
+- 对 $A$ 的元素 $a_{ij}$：$\dfrac{\partial\text{out}}{\partial a_{ij}}=\sum\limits_{k=1}^p g_{ik}b_{jk}$（所以 $a_{23}$ 那条对：$g_{21}b_{31}+g_{22}b_{32}$）；
+- 对 $B$ 的元素 $b_{ij}$：$\dfrac{\partial\text{out}}{\partial b_{ij}}=\sum\limits_{k=1}^m g_{kj}a_{ki}$（所以 $b_{31}$ 就是 $g_{11}a_{13}+g_{21}a_{23}$）
+
+这里用 $\sum$ 的原因和之前说的一致，假设最终输出为：$\operatorname{out}(c_{11},c_{12},c_{21},c_{22})$，那么结果矩阵中的每个元素就是 $\operatorname{out}$ 函数的元（自变量）。
+
+### 形状/归约算子
+
+对于矩阵变形算子，我们只需要把前向传播的结果矩阵和反向的梯度矩阵都跟着变形就可以了，比如下面这两种：
+
+$$
+\begin{bmatrix}
+    a_{11} & a_{12} & a_{13} \\
+    a_{21} & a_{22} & a_{23}
+\end{bmatrix}
+\xRightarrow{\text{把二维矩阵变成向量}}
+\begin{bmatrix}
+    a_{11} & a_{12} & a_{13} & a_{21} & a_{22} & a_{23}
+\end{bmatrix}
+$$
+
+$$
+\begin{bmatrix}
+    a_{11} & a_{12} & a_{13} \\
+    a_{21} & a_{22} & a_{23}
+\end{bmatrix}
+\xRightarrow{\text{转置矩阵}}
+\begin{bmatrix}
+    a_{11} & a_{21} \\
+    a_{12} & a_{22} \\
+    a_{13} & a_{23}
+\end{bmatrix}
+$$
+
+而对于规约算子，我们就需要设置算子对每个元素的导数，假设现在有一个针对一维矩阵的 $\operatorname{sum}$ 算子：
+
+$$
+\operatorname{sumMat} \big(\begin{bmatrix}a_1 & a_2 & \cdots & a_n\end{bmatrix}\big)=a_1+a_2+\cdots+a_n
+$$
+
+则反向传播时，需要对原矩阵的梯度矩阵设置为
+$$\begin{bmatrix}
+    \dfrac{\partial \text{out}}{\partial \text{sumMat}} & \dfrac{\partial \text{out}}{\partial \text{sumMat}} & \cdots & \dfrac{\partial \text{out}}{\partial \text{sumMat}}
+\end{bmatrix}$$
+
+规约算子需要根据具体函数进行设置，本质上还是一个多元函数的偏导数，比如sum算子是加法操作，加法对每个输入变量的导数恒为 1，所以把上游梯度原样传给每个元素。
+
+## 待补充大纲：从数学核心到真正的 autograd 引擎
+
+> TODO：以下为待补内容，留待后续展开。
+
+### requires_grad 与叶子张量
+- 不是每个节点都保存梯度：只有 `requires_grad=True` 的叶子张量才在 `.grad` 上累积梯度。
+- 中间节点只挂 `grad_fn`（记录"怎么被算出来"），`.grad` 默认为 `None`。
+
+### 动态图（define-by-run）
+- 前向边算边建图；反向跑完即弃，下次前向重新建。
+- 对比静态图（先构图后执行）；解释为什么能 `print`、下断点、写任意控制流。
+
+### 反向图也是一张图 → 高阶导
+- 每个算子的 backward 又调用别的算子（如 $g_B=A^{\top}g$），因此反向可用同一套引擎再求导。
+- 用 `create_graph=True` 保留反向图，即可得二阶导、Hessian。
+
+### 反向的起点：不一定是 loss，也不一定是 1
+- 起点是标量 → 初始梯度为 $1$（$\frac{\partial \text{out}}{\partial \text{out}}=1$）。
+- 起点是张量 → 需显式传入同形梯度张量，等价于先构造标量 $s=\langle G,\text{out}\rangle$ 再反向。
+- 可对任意中间节点（如最后一层隐藏层）作起点，下游如何算损失不影响上游梯度。
+- 应用：只训练部分输出、自定义梯度回传、逐层梯度检查。
+
+### 一笔带过的实现细节
+- 反向本质是拓扑排序；
+- `grad` 默认累加，需要 `zero_grad()`；
+- `detach()` 与原地操作可能切断梯度。
+
+### 后续可选主题
+- 优化器与参数更新（SGD、学习率）——可另开一章。
