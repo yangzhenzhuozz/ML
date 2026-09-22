@@ -121,14 +121,14 @@ flowchart TD
 title: 反向传播
 ---
 flowchart TD
-    add1(("$$\begin{aligned}\text{add} & =6 \\\ g & =1 \end{aligned}$$"))
-    add2(("$$\begin{aligned}\text{add} & =14 \\\ g & =1 \end{aligned}$$"))
-    mul1(("$$\begin{aligned}\text{mul} & =3 \\\ g & =2 \end{aligned}$$"))
-    mul3(("$$\begin{aligned}\text{mul} & =8 \\\ g & =1 \end{aligned}$$"))
-    a(("$$\begin{aligned}a &=1 \\\ g &=6 \end{aligned}$$"))
-    b(("$$\begin{aligned}b &=2 \\\ g &=4 \end{aligned}$$"))
-    x_1(("$$\begin{aligned}x_1 &=3 \\\ g &=2 \end{aligned}$$"))
-    x_2(("$$\begin{aligned}x_2 &=4 \\\ g &=2 \end{aligned}$$"))
+    add1(("$$\begin{aligned}\text{add}=6 \\\ g =1 \end{aligned}$$"))
+    add2(("$$\begin{aligned}\text{add}=14 \\\ g =1 \end{aligned}$$"))
+    mul1(("$$\begin{aligned}\text{mul}=3 \\\ g =2 \end{aligned}$$"))
+    mul3(("$$\begin{aligned}\text{mul}=8 \\\ g =1 \end{aligned}$$"))
+    a(("$$\begin{aligned}a=1 \\\ g =6 \end{aligned}$$"))
+    b(("$$\begin{aligned}b=2 \\\ g =4 \end{aligned}$$"))
+    x_1(("$$\begin{aligned}x_1=3 \\\ g =2 \end{aligned}$$"))
+    x_2(("$$\begin{aligned}x_2=4 \\\ g =2 \end{aligned}$$"))
 
     add1--> mul1 & mul1
     add2--> add1 & mul3
@@ -292,39 +292,108 @@ $$
 \operatorname{sumMat} \big(\begin{bmatrix}a_1 & a_2 & \cdots & a_n\end{bmatrix}\big)=a_1+a_2+\cdots+a_n
 $$
 
-则反向传播时，需要对原矩阵的梯度矩阵设置为
-$$\begin{bmatrix}
+设 sumMat 节点的梯度为 g，则反向传播时，将 sumMat 算子参数矩阵的梯度矩阵设置为
+
+$$
+\begin{bmatrix}
     \dfrac{\partial \text{out}}{\partial \text{sumMat}} & \dfrac{\partial \text{out}}{\partial \text{sumMat}} & \cdots & \dfrac{\partial \text{out}}{\partial \text{sumMat}}
-\end{bmatrix}$$
+\end{bmatrix}
+=
+\begin{bmatrix}
+    g & g & \cdots & g
+\end{bmatrix}
+$$
 
 规约算子需要根据具体函数进行设置，本质上还是一个多元函数的偏导数，比如sum算子是加法操作，加法对每个输入变量的导数恒为 1，所以把上游梯度原样传给每个元素。
 
-## 待补充大纲：从数学核心到真正的 autograd 引擎
+### PyTorch的优秀工程实践特性
 
-> TODO：以下为待补内容，留待后续展开。
+前面的内容虽然已经把PyTorch的数学原理说了一大堆，但是还有几个工程方面的优秀特性没有介绍：
 
-### requires_grad 与叶子张量
-- 不是每个节点都保存梯度：只有 `requires_grad=True` 的叶子张量才在 `.grad` 上累积梯度。
-- 中间节点只挂 `grad_fn`（记录"怎么被算出来"），`.grad` 默认为 `None`。
+1. requires_grad 与叶子张量：只有 `requires_grad=True` 的叶子张量才在 `.grad` 上累积梯度
 
-### 动态图（define-by-run）
-- 前向边算边建图；反向跑完即弃，下次前向重新建。
-- 对比静态图（先构图后执行）；解释为什么能 `print`、下断点、写任意控制流。
+    实际运行起来的计算图往往都非常巨大，如果给每个中间节点都存放梯度，会额外消耗 $O(n)$ 的存储空间
 
-### 反向图也是一张图 → 高阶导
-- 每个算子的 backward 又调用别的算子（如 $g_B=A^{\top}g$），因此反向可用同一套引擎再求导。
-- 用 `create_graph=True` 保留反向图，即可得二阶导、Hessian。
+    ```mermaid
+    flowchart TD
+    a((a))
+    b((b))
+    c((c))
+    add1((add)) --> b & c
+    add2((add)) --> add1 & a
+    ```
 
-### 反向的起点：不一定是 loss，也不一定是 1
-- 起点是标量 → 初始梯度为 $1$（$\frac{\partial \text{out}}{\partial \text{out}}=1$）。
-- 起点是张量 → 需显式传入同形梯度张量，等价于先构造标量 $s=\langle G,\text{out}\rangle$ 再反向。
-- 可对任意中间节点（如最后一层隐藏层）作起点，下游如何算损失不影响上游梯度。
-- 应用：只训练部分输出、自定义梯度回传、逐层梯度检查。
+    假设都是2元算子，要把n个叶子汇总成一个树的根节点，需要消耗 $n-1$ 个中间节点，并且有的叶子节点本身也不需要计算梯度。
 
-### 一笔带过的实现细节
-- 反向本质是拓扑排序；
-- `grad` 默认累加，需要 `zero_grad()`；
-- `detach()` 与原地操作可能切断梯度。
+1. 动态图
+   PyTorch的计算图是动态构建的，并不是先把图画好，然后一步步推导。靠着`C++/python`提供的操作符重载能力，我们可以把上面的图写成下面的伪代码：
+
+    ```python
+    a = leaf(1.0,requires_grad=True)
+    b = leaf(1.0,requires_grad=True)
+    c = leaf(1.0,requires_grad=True)
+
+    tmp=b+c
+    out=a+tmp
+    ```
+
+    PyTorch会根据实际执行的代码，动态的创建出计算图，为autograd提供支持。如果是像`java/js`这种不支持操作符重载的编程语言，只能丑陋的写成
+
+    ```java
+    Leaf a = new Leaf(1.0,true);
+    Leaf b = new Leaf(1.0,true);
+    Leaf c = new Leaf(1.0,true);
+
+    Node tmp = b.add(c);
+    Node out = tmp.add(a);
+    ```
+
+    动态图允许在执行过程中对任意一个阶段调试，而且这种构建也符合人类直觉。
+
+### 高阶导数
+
+在PyTorch中，求导的过程可以生成一张计算图，然后生成的这个图还能继续求导。比如：
+
+```python
+import torch
+x = torch.tensor(2.0, requires_grad=True)
+y = torch.log(x)
+dy_dx = torch.autograd.grad(y,x,create_graph=True)[0]
+# 第二次求导
+d2y_dx2 = torch.autograd.grad(dy_dx,x)[0]
+print("x =", x)
+print("y =", y)
+print("一阶导 dy/dx =", dy_dx)
+print("二阶导 d²y/dx² =", d2y_dx2)
+```
+
+PyTorch会按照如下流程创建计算图：
+
+```mermaid
+flowchart TD
+x((x))
+log(("$$y=\log$$"))
+log-->x
+```
+
+在使用y对x求导的时候，可以根据 $\log$ 算子知道求导公式为 $y'=\dfrac{1}{x}$ （PyTorch等很多数学库都会用自然对数做log函数的底数，因为 $\ln(x)$ 用的多，人们先针对 $e$ 为底的对数函数写了一些优化算法，并且用对数的换底公式 $\dfrac{\log_a n}{\log_a m}=\log_m n$来表达任意的log，所以很多数学库的 $\log$ 实际上是 $\ln$），然后构造出下面这个图，并且把图的信息附带到变量`dy_dx`中：
+
+```mermaid
+flowchart TD
+div((div))
+1((1))
+x((x))
+div-->1 & x
+```
+
+这时候第二次求导就会用这个图更高阶的导数
+
+### 从任意节点开始反向
+
+在真实的反向传播中，我们不一定需要从最终的 $\text{Loss}$ 开始，只要知道了中间位置的前向传播输出和现有梯度（可以是一个预设值或者通过某种算法算出来的），就可以从中间位置开始反向传播，在训练部分输出、自定义梯度回传、逐层梯度检查，这将是一个强力功能。
+
+这里"现有梯度"有个神奇的地方值得细说：只有当这个中间节点恰好是你要对它自己求导的那个标量（它自己成了根）时，这个预设值才等于 $1$，也就是前面说的 $\frac{\partial \text{out}}{\partial \text{out}}=1$；如果起点是个矩阵，初始梯度就得是一个和它**同形**的矩阵 $G$，具体取什么值要看这个矩阵朝输出方向是如何被汇总成标量的——如果紧挨着的后继节点是 $\operatorname{matSum}$（求和），那么初始梯度就是全 $1$ 矩阵。说了这么多，其实就是看这个中间位置你想对谁求导：标量对自己求导就是 $1$，而矩阵在我们这套规则里不能对自己求导，必须由一个标量来对矩阵求导（换句话说，计算图中只允许"标量对矩阵"这一种梯度，不允许"矩阵对矩阵"的雅可比，否则就和设计不符了；当然，数学上完全可以给矩阵定义求导规则）。
 
 ### 后续可选主题
+
 - 优化器与参数更新（SGD、学习率）——可另开一章。
