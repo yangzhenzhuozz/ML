@@ -308,7 +308,7 @@ $$
 
 ### PyTorch的优秀工程实践特性
 
-前面的内容虽然已经把PyTorch的数学原理说了一大堆，但是还有几个工程方面的优秀特性没有介绍：
+前面的内容虽然已经把PyTorch的基础数学原理说了一大堆，但是还有几个工程方面的优秀特性没有介绍：
 
 1. requires_grad 与叶子张量：只有 `requires_grad=True` 的叶子张量才在 `.grad` 上累积梯度
 
@@ -394,6 +394,119 @@ div-->1 & x
 
 这里"现有梯度"有个神奇的地方值得细说：只有当这个中间节点恰好是你要对它自己求导的那个标量（它自己成了根）时，这个预设值才等于 $1$，也就是前面说的 $\frac{\partial \text{out}}{\partial \text{out}}=1$；如果起点是个矩阵，初始梯度就得是一个和它**同形**的矩阵 $G$，具体取什么值要看这个矩阵朝输出方向是如何被汇总成标量的——如果紧挨着的后继节点是 $\operatorname{matSum}$（求和），那么初始梯度就是全 $1$ 矩阵。说了这么多，其实就是看这个中间位置你想对谁求导：标量对自己求导就是 $1$，而矩阵在我们这套规则里不能对自己求导，必须由一个标量来对矩阵求导（换句话说，计算图中只允许"标量对矩阵"这一种梯度，不允许"矩阵对矩阵"的雅可比，否则就和设计不符了；当然，数学上完全可以给矩阵定义求导规则）。
 
-### 后续可选主题
+### 广播
 
-- 优化器与参数更新（SGD、学习率）——可另开一章。
+PyTorch把多维数据叫做张量（Tensor），如果你熟悉C/C++等编程语言，可以把张量理解成一个多维数组，张量就是存放数据的一个容器。
+
+在实际训练模型的时候，为了简化代码和数据，从`MATLAB`的`bsxfun`到`NumPy`，给数据加了一个广播的动作用以将两个张量的形状对齐。假设有一个长度为 3 的向量 $[a_1 \quad a_2 \quad a_3]$，现在有一个偏置是 $b$，在数学上我们必须构造一个同形向量 $[b \quad b \quad b]$，然后才能计算
+
+$$[a_1 \quad a_2 \quad a_3]+[b \quad b \quad b]=[a_1+b \quad a_2+b \quad a_3+b]$$
+
+但是在PyTorch中，我们可以这样写：
+
+```python
+import torch
+a = torch.tensor([1.0,2.0,3.0])
+b = torch.tensor(10)
+c = a + b
+```
+
+PyTorch发现某个算子两侧的数据尺寸不一致时，会自动调整数据尺寸（broadcasting）,把b扩展成和a同形，这时候从数学上来说等价于把b变成了 $[10 \quad 10 \quad 10]$，这时候就能进行逐元素相加。
+
+PyTorch张量运算时会自动检查张量的维度和每个维度的宽度，比较时从最后一维（最右边）开始，依次向左对齐，要求必须满足如下规则：
+
+1. 两个张量维度相同时，每个维度的宽度应该相等；如果有宽度不相等的维度，必须有一个张量对应维度的宽度为 1，此时 PyTorch 会自动把宽度为 1 的数据复制（虚拟复制）到和对方宽度一致。如果对应维度两个都不为 1 且不相等，就会直接报错；
+2. 两个张量维度不同时，会在维度数少的那个张量的前面（高维一侧）补上宽度为 1 的维度，先扩充维度，然后再按规则 1 扩充宽度。
+
+在进行广播操作的时候，是把某个元素复制了多份，那么就和DAG复用节点一样，相当于这个元素被复用了，反向传播的时候就依次把梯度累加回去。
+
+### 爱因斯坦求和
+
+根据求和公式：
+$$C_{ilmn} = A_{ijkl} B_{jkmn}=\sum_{j=1}^J \sum_{k=1}^K A_{ijkl} B_{jkmn}$$
+和矩阵乘法类似，我们固定住 $A_{ijkl}$ 这一个元素来观察：它的 $i,l$ 两个角标决定了它只会出现在结果张量中前两位为 $i,l$ 的那一批 $C_{ilmn}$ 里；而 $C$ 的后两位 $m,n$ 是自由的，于是 $A_{ijkl}$ 一共被乘进了 $M\times N$ 个 $C_{ilmn}$ 元素，每个都通过链式法则回传一份梯度。假设得到的结果梯度张量为 $G_{ilmn}$，则 $A_{ijkl}$ 元素的梯度为 
+$$G_{A_{ijkl}}=\sum_n^N \sum_m^M G_{ilmn}B_{jkmn}$$
+同理，B张量中 $B_{jkmn}$ 元素的梯度为
+$$G_{B_{jkmn}}=\sum_l^L \sum_i^I G_{ilmn} A_{ijkl}$$
+
+因为他们内部本质上就是乘法和加法运算。
+
+
+
+---
+--- 
+
+这是根据前面的知识点，让AI生成的一段带自动求导的代码
+
+```typescript
+class GNode {
+    value: number;
+    grad: number = 0;
+    requiresGrad: boolean;
+    inputs: GNode[] = []; //输入节点
+    gradFn: ((g: number) => void) | null = null; //记录梯度怎么传递给输入节点
+    constructor(value: number, requiresGrad = false) {
+        this.value = value;
+        this.requiresGrad = requiresGrad;
+    }
+}
+
+function backward(start: GNode): void {
+    // 使用DFS+reverse得到拓扑层级
+    const topo: GNode[] = [];
+    const visited = new Set<GNode>();
+    const build = (n: GNode): void => {
+        if (visited.has(n)) return;
+        visited.add(n);
+        n.inputs.forEach(build);
+        topo.push(n);
+    };
+    build(start);
+    topo.reverse();
+
+    start.grad = 1;
+    for (const n of topo) {
+        n.gradFn?.(n.grad);
+    }
+}
+
+function add(a: GNode, b: GNode): GNode {
+    const out = new GNode(a.value + b.value, a.requiresGrad || b.requiresGrad);
+    out.inputs = [a, b];
+    if (out.requiresGrad) {
+        out.gradFn = (g) => {
+            a.grad += g;
+            b.grad += g;
+        }; // ∂(a+b)/∂a=∂(a+b)/∂b=1
+    }
+    return out;
+}
+
+function mul(a: GNode, b: GNode): GNode {
+    const out = new GNode(a.value * b.value, a.requiresGrad || b.requiresGrad);
+    out.inputs = [a, b];
+    if (out.requiresGrad) {
+        out.gradFn = (g) => {
+            a.grad += g * b.value; // ∂(a*b)/∂a = b（前向值！）
+            b.grad += g * a.value; // ∂(a*b)/∂b = a（前向值！）
+        };
+    }
+    return out;
+}
+
+const a = new GNode(1, true);
+const b = new GNode(2, true);
+const x1 = new GNode(3, true);
+const x2 = new GNode(4, true);
+const mul1 = mul(a, x1);
+const mul2 = mul(b, x2);
+const add1 = add(mul1, mul1);
+const add2 = add(add1, mul2);
+
+backward(add2);
+console.log('add2.value =', add2.value); // 14
+console.log('a.grad =', a.grad); // 6
+console.log('x1.grad =', x1.grad); // 2
+console.log('b.grad =', b.grad); // 4
+console.log('x2.grad =', x2.grad); // 2
+```
