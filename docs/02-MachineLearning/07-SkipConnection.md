@@ -68,7 +68,7 @@ $c_1$ 的输出为：$c_1=σ(ω_{c11}b_1+ω_{c12}b_2+\text{bias}_{c1})+a_1$，�
 
 1. 前向传播：$c_1=σ(ω_{c11}b_1+ω_{c12}b_2+\text{bias}_{c1})+a_1$，和之前的唯一差异就是直接加了一个skip层的输出。
 2. 反向传播：我们用 $a_1$ 举例，因为 $a_1$ 比MLP多连接了一个神经元，所以在MLP的基础上有轻微的差异：  
-   根据计算图的内容，只要神经元还是 $σ(z)$ 的形式，则对当前神经元中某个参数 $\dfrac{\partial L}{\partial ω}=δ\dfrac{\partial z}{\partial ω}$，但是敏感度 $δ=\dfrac{\partial L}{\partial z}$ 不再是简单的用下级节点敏感度累加了，以 $a_1$ 作为举例，设 $a_1$ 连接了 $b$ 层的所有节点，并且用残差连接了 $c_1$，设最终损失函数为 $\text{Loss}=L(b_1,b_2,c_1)$，并且 $c_1=c_1(b_1,b_2,a_1)$，所以我们在计算偏导数的时候千万小心，这是[复合函数的某些中间变量本身又是复合函数的自变量](../01-Math/AdvancedMathematics.md#复合函数的某些中间变量本身又是复合函数的自变量)这种情形。
+   根据计算图的内容，只要神经元还是 $σ(z)$ 的形式，则对当前神经元中某个参数 $\dfrac{\partial L}{\partial ω}=δ\dfrac{\partial z}{\partial ω}$，但是敏感度 $δ=\dfrac{\partial L}{\partial z}$ 不再是简单的用下级节点敏感度累加了，以 $a_1$ 作为举例，设 $a_1$ 连接了 $b$ 层的所有节点，并且用残差连接了 $c_1$，设最终损失函数为 $\text{Loss}=L(b_1,b_2,c_1)$，并且 $c_1=c_1(b_1,b_2,a_1)$，所以我们在计算偏导数的时候千万小心，这是[复合函数的某些中间变量本身又是复合函数的自变量](../01-Math/01-AdvancedMathematics.md#复合函数的某些中间变量本身又是复合函数的自变量)这种情形。
    $$δ=\dfrac{\partial L}{\partial z_{a_1}}=\dfrac{\partial L}{\partial a_1}\dfrac{\partial a_1}{\partial z_{a_1}}= \underbrace{\dfrac{\partial L}{\partial b_1}\dfrac{\partial b_1}{\partial a_1}\dfrac{\partial a_1}{\partial z_{a_1}}+\dfrac{\partial L}{\partial b_2}\dfrac{\partial b_2}{\partial a_1}\dfrac{\partial a_1}{\partial z_{a_1}}}_{\left(\sum _{i}\delta _{i}\dfrac{\partial z_{i}}{\partial h}\right)\dfrac{\partial h}{\partial z}}+\dfrac{\partial L}{\partial c_1}\dfrac{\partial c_1}{\partial a_1}\dfrac{\partial a_1}{\partial z_{a_1}}$$
    并且有$\dfrac{\partial c_1}{\partial a_1}=1$，在反向传播中，这个1将会让梯度能继续传播。
 

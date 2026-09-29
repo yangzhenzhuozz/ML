@@ -69,7 +69,7 @@ flowchart TD
     mul3--> b & x_2
 ```
 
-这里假设add算子接受两个参数 $add(x,y)$，用高数里多元复合函数偏导数的思想，就算实际情况中y是x的函数，我们也可以用换元法，把x,y理解成两个独立变量，具体数学原理见[复合函数的某些中间变量本身又是复合函数的自变量](../01-Math/AdvancedMathematics.md#复合函数的某些中间变量本身又是复合函数的自变量)。
+这里假设add算子接受两个参数 $add(x,y)$，用高数里多元复合函数偏导数的思想，就算实际情况中y是x的函数，我们也可以用换元法，把x,y理解成两个独立变量，具体数学原理见[复合函数的某些中间变量本身又是复合函数的自变量](../01-Math/01-AdvancedMathematics.md#复合函数的某些中间变量本身又是复合函数的自变量)。
 
 反向传播总得有个起点：最高处的那个节点先拿到一个初始梯度 $1$，因为 $\frac{\partial \operatorname{out}}{\partial \operatorname{out}}=1$，当然如果 $\operatorname{out}=\operatorname{Loss}$ 函数，就刚好能用到机器学习里面。从它开始，每个算子 $O$ 都会收到一个**从输出侧传来的梯度** $g=\dfrac{\partial \operatorname{out}}{\partial O}$，然后把它分配到自己的两个输入（$v_1,v_2$）：
 
@@ -247,9 +247,9 @@ $$
 
 $$
 \begin{aligned}
-\dfrac{\partial \text{out}}{\partial a_{23}}=\dfrac{\partial \text{out}}{\partial c_{21}}\dfrac{{\partial c_{21}}}{\partial a_{23}}+\dfrac{\partial \text{out}}{\partial c_{22}}\dfrac{{\partial c_{22}}}{\partial a_{23}}=g_{21}b_{31}+g_{22}b_{32}
+\dfrac{\partial \text{out}}{\partial a_{23}}=\dfrac{\partial \text{out}}{\partial c_{21}}\dfrac{\partial c_{21}}{\partial a_{23}}+\dfrac{\partial \text{out}}{\partial c_{22}}\dfrac{\partial c_{22}}{\partial a_{23}}=g_{21}b_{31}+g_{22}b_{32}
 \\
-\dfrac{\partial \text{out}}{\partial b_{31}}=\dfrac{\partial \text{out}}{\partial c_{11}}\dfrac{{\partial c_{11}}}{\partial b_{31}}+\dfrac{\partial \text{out}}{\partial c_{21}}\dfrac{{\partial c_{21}}}{\partial b_{31}}=g_{11}a_{13}+g_{21}a_{23}
+\dfrac{\partial \text{out}}{\partial b_{31}}=\dfrac{\partial \text{out}}{\partial c_{11}}\dfrac{\partial c_{11}}{\partial b_{31}}+\dfrac{\partial \text{out}}{\partial c_{21}}\dfrac{\partial c_{21}}{\partial b_{31}}=g_{11}a_{13}+g_{21}a_{23}
 \end{aligned}
 $$
 
@@ -424,17 +424,16 @@ PyTorch张量运算时会自动检查张量的维度和每个维度的宽度，�
 
 根据求和公式：
 $$C_{ilmn} = A_{ijkl} B_{jkmn}=\sum_{j=1}^J \sum_{k=1}^K A_{ijkl} B_{jkmn}$$
-和矩阵乘法类似，我们固定住 $A_{ijkl}$ 这一个元素来观察：它的 $i,l$ 两个角标决定了它只会出现在结果张量中前两位为 $i,l$ 的那一批 $C_{ilmn}$ 里；而 $C$ 的后两位 $m,n$ 是自由的，于是 $A_{ijkl}$ 一共被乘进了 $M\times N$ 个 $C_{ilmn}$ 元素，每个都通过链式法则回传一份梯度。假设得到的结果梯度张量为 $G_{ilmn}$，则 $A_{ijkl}$ 元素的梯度为 
+和矩阵乘法类似，我们固定住 $A_{ijkl}$ 这一个元素来观察：它的 $i,l$ 两个角标决定了它只会出现在结果张量中前两位为 $i,l$ 的那一批 $C_{ilmn}$ 里；而 $C$ 的后两位 $m,n$ 是自由的，于是 $A_{ijkl}$ 一共被乘进了 $M\times N$ 个 $C_{ilmn}$ 元素，每个都通过链式法则回传一份梯度。假设得到的结果梯度张量为 $G_{ilmn}$，则 $A_{ijkl}$ 元素的梯度为
 $$G_{A_{ijkl}}=\sum_n^N \sum_m^M G_{ilmn}B_{jkmn}$$
 同理，B张量中 $B_{jkmn}$ 元素的梯度为
 $$G_{B_{jkmn}}=\sum_l^L \sum_i^I G_{ilmn} A_{ijkl}$$
 
 因为他们内部本质上就是乘法和加法运算。
 
-
+---
 
 ---
---- 
 
 这是根据前面的知识点，让AI生成的一段带自动求导的代码
 
