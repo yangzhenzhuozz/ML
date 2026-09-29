@@ -12,6 +12,7 @@ export default withMermaid({
                     search: {
                         provider: 'local',
                     },
+                    outline: [2, 3], // 右侧目录显示 h2 和 h3
                 },
                 markdown: {
                     breaks: true,
