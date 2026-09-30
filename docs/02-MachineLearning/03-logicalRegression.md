@@ -63,9 +63,7 @@ $$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial \omega} = (a - y) \c
 对偏置 $b$ 求偏导同理可得：
 $$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial b} = (a - y) \cdot \sigma'(z)$$
 
-听起来很完美对吧？但对硬件工程师来说，这无异于在电路板上接反了正负极——**它在数学上会发生极其恐怖的“电压被死死锁死”的现象（非凸优化与梯度消失）。**
-
-秘密就藏在中间这个 **$\sigma'(z)$（Sigmoid 的导数）** 身上。
+听起来很完美对吧？但是在 **$\sigma'(z)$（Sigmoid 的导数）** 身上会出现一个很严重的问题。
 
 请仔细盯着上面那个平滑的 Sigmoid 图像：当设备处于绝对安全（$z$ 很大）或者严重短路（$z$ 倒向负无穷）的远端饱和区时，函数曲线变得**极其平坦**，几乎是一条水平线。
 
@@ -77,7 +75,7 @@ $$\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial b} = (a - y) \cdot \
 
 两个数相乘，0 拥有绝对的抹杀权。最终计算出来的梯度 $\frac{\partial \operatorname{Loss}_{\text{MSE}}}{\partial \omega} \approx 0$。
 
-梯度一归零，梯度下降的小球直接在半山腰的平地上停滞不前。**模型明明猜错了，却因为“傲慢与偏见”陷入了死寂，根本无法自己修正参数。** 这种因为激活函数两端饱和导致模型无法训练的绝症，在深度学习里被称为**梯度消失（Gradient Vanishing）**。
+梯度一归零，梯度下降的小球直接在半山腰的平地上停滞不前。模型明明猜错了，却无法修正参数。 这种因为激活函数两端饱和导致模型无法训练的绝症，在深度学习里被称为**梯度消失（Gradient Vanishing）**。
 
 ### demo(使用sigmoid做本例中的激活函数)
 demo的训练数据为：
