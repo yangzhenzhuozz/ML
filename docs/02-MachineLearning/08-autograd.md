@@ -427,15 +427,13 @@ Node out = tmp.add(a);
 
 ## demo：完整实现
 
-下面我们把这一章讲的自动求导系统落成一个**完整可跑的实现**，并用它训练一个 MLP 去解决专家系统最头疼的 XOR 问题：
+下面我们把这一章讲的自动求导系统落成一个**完整可跑的实现**，并用它训练一个 MLP 去解决令专家系统头疼的 XOR 问题：
 
 - **引擎本体**（约 300 行）：`Tensor`（扁平存储 + 形状 + 梯度）、广播家族（`broadCast`/`broadCastToShape`/`foldBack`）、四则与矩阵乘算子、激活与归约算子、`addGrad` 统一收梯度、`backward` 拓扑排序求导；
 - **演示程序**：训练 `2 → sigmoid(4) → sigmoid(1)` 的 MLP 学 XOR，loss 从 $0.31$ 直降到 $\sim 10^{-4}$，四组输入全对；
 - **单元测试** 24 个，守护每一步的正确性。
 
-完整代码较长，正文不整段粘贴，三个文件放在项目 `examples/Torch/` 目录。网页上打包成 **zip 下载**（不直接给 `.ts` 源文件——浏览器会把 `.ts` 当作 MPEG 视频流扩展名直接打开乱码）：
-
-📦 **[torch-code.zip](/code/torch-code.zip)**，内含三个文件：
+由于完整代码较长，正文不整段粘贴，可以自行下载：[torch-code.zip](/code/torch-code.zip)。内含三个文件：
 
 - `torch.ts`：引擎本体（张量、广播、自动求导）
 - `demo-xor.ts`：训练 XOR 的完整示例
@@ -448,4 +446,6 @@ node demo-xor.ts            # 训练 XOR，loss 从 ~0.31 降到 ~1e-4，四组�
 node --test torch.test.ts   # 24 个测试全部通过
 ```
 
-> **实现要点**：`backward` 用 DFS 后序 + reverse 得到从输出到叶子的拓扑序，置 $\dfrac{\partial \text{out}}{\partial \text{out}}=1$ 后逐节点分发梯度；`addGrad` 统一收梯度——若是广播产生的张量（带 `sourceTensor`），先按形状差异用 `foldBack` 把梯度归约折回源张量，否则直接累加。这对应的正是本章"元素被复制几份、梯度就累加几份"的广播反向规则。
+> **实现要点**：
+> `backward` 用 DFS 后序 + reverse 得到从输出到叶子的拓扑序，置 $\dfrac{\partial \text{out}}{\partial \text{out}}=1$ 后逐节点分发梯度；
+> `addGrad` 统一收梯度——若是广播产生的张量（带 `sourceTensor`），先按形状差异用 `foldBack` 把梯度归约折回源张量，否则直接累加。

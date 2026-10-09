@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..'); // 仓库根
-const srcDir = join(root, 'examples', 'Torch');
+const srcDir = join(root, 'examples', '08-Torch');
 const outDir = join(root, 'docs', 'public', 'code');
 const files = ['torch.ts', 'demo-xor.ts', 'torch.test.ts'];
 const zipPath = join(outDir, 'torch-code.zip');
