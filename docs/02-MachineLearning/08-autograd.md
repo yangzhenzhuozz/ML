@@ -73,10 +73,10 @@ flowchart TD
 
 反向传播总得有个起点：最高处的那个节点先拿到一个初始梯度 $1$，因为 $\frac{\partial \operatorname{out}}{\partial \operatorname{out}}=1$，当然如果 $\operatorname{out}=\operatorname{Loss}$ 函数，就刚好能用到机器学习里面。从它开始，每个算子 $O$ 都会收到一个**从输出侧传来的梯度** $g=\dfrac{\partial \operatorname{out}}{\partial O}$，然后把它分配到自己的两个输入（$v_1,v_2$）：
 
-| 算子节点 | $\frac{\partial O}{\partial v_1}$ | $\frac{\partial O}{\partial v_2}$ | 传给输入的梯度    |
-| -------- | --------------------------------- | --------------------------------- | ----------------- |
-| add      | 1                                 | 1                                 | $(g,\ g)$         |
-| mul      | $v_2$                             | $v_1$                             | $(g v_2,\ g v_1)$ |
+| 算子节点 | $\frac{\partial O}{\partial v_1}$ | $\frac{\partial O}{\partial v_2}$ | 传给输入节点的梯度$(\dfrac{\partial \text{out}}{\partial v_1}=\dfrac{\partial \text{out}}{\partial O}\dfrac{\partial O}{\partial v_1},\dfrac{\partial \text{out}}{\partial v_2}=\dfrac{\partial \text{out}}{\partial O}\dfrac{\partial O}{\partial v_2})$ |
+| -------- | --------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| add      | 1                                 | 1                                 | $(g,g)$                                                                                                                                                                                                                                                   |
+| mul      | $v_2$                             | $v_1$                             | $(g v_2,\ g v_1)$                                                                                                                                                                                                                                         |
 
 mul 的局部导数用的是 $v_1$、$v_2$ 在前向时的取值，同时还需要特别**注意**：当一个节点被使用多次的时候，如图中的一个 $\text{mul}$ 节点，我们需要把每次传播的梯度值累加，从数学上很容易理解，设 $y=f(x,x)$，我们可以把两个 $x$ 分别换元成 $x_1$、$x_2$，则有：
 
@@ -425,79 +425,27 @@ Node out = tmp.add(a);
 
 这里"现有梯度"有个神奇的地方值得细说：只有当这个中间节点恰好是你要对它自己求导的那个标量（它自己成了根）时，这个预设值才等于 $1$，也就是前面说的 $\frac{\partial \text{out}}{\partial \text{out}}=1$；如果起点是个矩阵，初始梯度就得是一个和它**同形**的矩阵 $G$，具体取什么值要看这个矩阵朝输出方向是如何被汇总成标量的——如果紧挨着的后继节点是 $\operatorname{matSum}$（求和），那么初始梯度就是全 $1$ 矩阵。说了这么多，其实就是看这个中间位置你想对谁求导：标量对自己求导就是 $1$，而矩阵在我们这套规则里不能对自己求导，必须由一个标量来对矩阵求导（换句话说，计算图中只允许"标量对矩阵"这一种梯度，不允许"矩阵对矩阵"的雅可比，否则就和设计不符了；当然，数学上完全可以给矩阵定义求导规则）。
 
-## demo
+## demo：完整实现
 
-下面我们用一小段代码，把这一章讲的自动求导系统落成一个最小可跑的实现：
+下面我们把这一章讲的自动求导系统落成一个**完整可跑的实现**，并用它训练一个 MLP 去解决专家系统最头疼的 XOR 问题：
 
-```typescript
-class GNode {
-    value: number;
-    grad: number = 0;
-    requiresGrad: boolean;
-    inputs: GNode[] = []; //输入节点
-    gradFn: ((g: number) => void) | null = null; //记录梯度怎么传递给输入节点
-    constructor(value: number, requiresGrad = false) {
-        this.value = value;
-        this.requiresGrad = requiresGrad;
-    }
-}
+- **引擎本体**（约 300 行）：`Tensor`（扁平存储 + 形状 + 梯度）、广播家族（`broadCast`/`broadCastToShape`/`foldBack`）、四则与矩阵乘算子、激活与归约算子、`addGrad` 统一收梯度、`backward` 拓扑排序求导；
+- **演示程序**：训练 `2 → sigmoid(4) → sigmoid(1)` 的 MLP 学 XOR，loss 从 $0.31$ 直降到 $\sim 10^{-4}$，四组输入全对；
+- **单元测试** 24 个，守护每一步的正确性。
 
-function backward(start: GNode): void {
-    // 使用DFS+reverse得到拓扑层级
-    const topo: GNode[] = [];
-    const visited = new Set<GNode>();
-    const build = (n: GNode): void => {
-        if (visited.has(n)) return;
-        visited.add(n);
-        n.inputs.forEach(build);
-        topo.push(n);
-    };
-    build(start);
-    topo.reverse();
+完整代码较长，正文不整段粘贴，三个文件放在项目 `examples/Torch/` 目录。网页上打包成 **zip 下载**（不直接给 `.ts` 源文件——浏览器会把 `.ts` 当作 MPEG 视频流扩展名直接打开乱码）：
 
-    start.grad = 1;
-    for (const n of topo) {
-        n.gradFn?.(n.grad);
-    }
-}
+📦 **[torch-code.zip](/code/torch-code.zip)**，内含三个文件：
 
-function add(a: GNode, b: GNode): GNode {
-    const out = new GNode(a.value + b.value, a.requiresGrad || b.requiresGrad);
-    out.inputs = [a, b];
-    if (out.requiresGrad) {
-        out.gradFn = (g) => {
-            a.grad += g;
-            b.grad += g;
-        }; // ∂(a+b)/∂a=∂(a+b)/∂b=1
-    }
-    return out;
-}
+- `torch.ts`：引擎本体（张量、广播、自动求导）
+- `demo-xor.ts`：训练 XOR 的完整示例
+- `torch.test.ts`：24 个单元测试
 
-function mul(a: GNode, b: GNode): GNode {
-    const out = new GNode(a.value * b.value, a.requiresGrad || b.requiresGrad);
-    out.inputs = [a, b];
-    if (out.requiresGrad) {
-        out.gradFn = (g) => {
-            a.grad += g * b.value; // ∂(a*b)/∂a = b（前向值！）
-            b.grad += g * a.value; // ∂(a*b)/∂b = a（前向值！）
-        };
-    }
-    return out;
-}
+下载解压后把三个文件放到**同一目录**，运行：
 
-const a = new GNode(1, true);
-const b = new GNode(2, true);
-const x1 = new GNode(3, true);
-const x2 = new GNode(4, true);
-const mul1 = mul(a, x1);
-const mul2 = mul(b, x2);
-const add1 = add(mul1, mul1);
-const add2 = add(add1, mul2);
-
-backward(add2);
-console.log('add2.value =', add2.value); // 14
-console.log('a.grad =', a.grad); // 6
-console.log('x1.grad =', x1.grad); // 2
-console.log('b.grad =', b.grad); // 4
-console.log('x2.grad =', x2.grad); // 2
+```bash
+node demo-xor.ts            # 训练 XOR，loss 从 ~0.31 降到 ~1e-4，四组输入全对
+node --test torch.test.ts   # 24 个测试全部通过
 ```
+
+> **实现要点**：`backward` 用 DFS 后序 + reverse 得到从输出到叶子的拓扑序，置 $\dfrac{\partial \text{out}}{\partial \text{out}}=1$ 后逐节点分发梯度；`addGrad` 统一收梯度——若是广播产生的张量（带 `sourceTensor`），先按形状差异用 `foldBack` 把梯度归约折回源张量，否则直接累加。这对应的正是本章"元素被复制几份、梯度就累加几份"的广播反向规则。
