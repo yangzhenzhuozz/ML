@@ -1,6 +1,10 @@
 import torch
 import torch.nn.functional as F
 
+"""
+可以看到用了PyTorch之后，我们的残差网络代码大幅度的变少了，不需要再小心的处理反向传播
+"""
+
 # XOR问题模型
 # 行向量，批量数据
 X = torch.tensor([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
@@ -56,9 +60,6 @@ for epoch_idx in range(0, epoch):
     else:
         out_neural = out_neural_buffer
     loss = F.binary_cross_entropy((add_bias(last_layout) @ out_neural).sigmoid(), Y)
-    # loss 是 0 维 tensor：.item() 取出 Python float，再用 f-string 控制小数位，避免科学计数法
-    # if epoch_idx % 100 == 0 or epoch_idx == epoch - 1:
-    #     print(f"epoch {epoch_idx:5d}  loss = {loss.item():.6f}")
 
     # 反向传播更新梯度
     loss.backward()
