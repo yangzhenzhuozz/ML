@@ -14,19 +14,19 @@
   },
   "type": "module",
   "devDependencies": {
-    "@types/node": "^26.1.1",
-    "mermaid": "^11.16.0",
-    "postcss": "^8.5.19",
+    "@types/node": "^26.6.5",
+    "mermaid": "^12.2.0",
+    "postcss": "^8.5.31",
     "vitepress": "2.0.0-alpha.17",
-    "vitepress-plugin-mermaid": "^2.0.17",
-    "vitepress-sidebar": "^1.36.1",
-    "vue": "^3.5.39"
+    "vitepress-sidebar": "^1.40.0",
+    "vue": "^3.5.44"
   },
   "dependencies": {
     "@vscode/markdown-it-katex": "^1.1.2",
     "echarts": "^6.1.0",
     "echarts-gl": "^2.1.0",
     "katex": "^0.17.0",
-    "mathjs": "^15.2.0"
+    "mathjs": "^15.2.0",
+    "vitepress-mermaid-viewer": "^0.5.1"
   }
 }

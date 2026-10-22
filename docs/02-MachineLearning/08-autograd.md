@@ -78,17 +78,17 @@ flowchart TD
 | add      | 1                                 | 1                                 | $(g,g)$                                                                                                                                                                                                                                                   |
 | mul      | $v_2$                             | $v_1$                             | $(g v_2,\ g v_1)$                                                                                                                                                                                                                                         |
 
-mul 的局部导数用的是 $v_1$、$v_2$ 在前向时的取值，同时还需要特别**注意**：当一个节点被使用多次的时候，如图中的一个 $\text{mul}$ 节点，我们需要把每次传播的梯度值累加，从数学上很容易理解，设 $y=f(x,x)$，我们可以把两个 $x$ 分别换元成 $x_1$、$x_2$，则有：
+mul 的局部导数用的是 $v_1$、$v_2$ 在前向时的取值，同时还需要特别**注意**：当一个节点被使用多次的时候，如图中的一个 $\text{mul}$ 节点，我们需要把每次传播的梯度值累加，从数学上很容易理解，设 $y=f(x,x)$，我们可以把两个 $x$ 分别换元成两个函数 $m(x)=x$、$n(x)=x$，则有：
 
 $$
 \begin{aligned}
-  y & =f(x_1,x_2) \\
-  dy & =\dfrac{\partial f}{\partial x_1}dx_1+\dfrac{\partial f}{\partial x_2}dx_2
+  y & =f(m(x),n(x)) \\
+  \dfrac{\partial y}{\partial x} & =\dfrac{\partial f}{\partial m}\dfrac{\partial m}{\partial x}+\dfrac{\partial f}{\partial n}\dfrac{\partial n}{\partial x}
 \end{aligned}
 $$
 
-最后再令 $x_1=x_2=x$，此时 $\dfrac{dx_1}{dx}=\dfrac{dx_2}{dx}=1$，于是
-$$\frac{dy}{dx}=\frac{\partial f}{\partial x_1}+\frac{\partial f}{\partial x_2}$$
+因为 $\dfrac{\partial m}{\partial x}=\dfrac{\partial n}{\partial x}=1$，于是
+$$\frac{dy}{dx}=\frac{\partial f}{\partial m}+\frac{\partial f}{\partial n}$$
 
 这就是"一个节点被用几次，梯度就加几次"的数学来源。
 

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress';
 import { withSidebar } from 'vitepress-sidebar';
 import katexPlugin from '@vscode/markdown-it-katex';
-import { withMermaid } from 'vitepress-plugin-mermaid';
+import { withMermaid } from 'vitepress-mermaid-viewer';
 
 export default withMermaid({
     ...defineConfig(
