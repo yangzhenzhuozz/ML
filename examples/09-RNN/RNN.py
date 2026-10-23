@@ -1,100 +1,121 @@
+from typing import cast
+
 import torch
 from torch import Tensor
 from torch.nn import functional as F
 from math import sin
 
-data_length = 10000  # 数据大小
-window = 10  # 训练窗口
-num_windows = 3000  # 训练次数
-batch_size = 5  # 训练批次大小，暂未使用
-learning_rate = 0.05  # 学习率
+torch.manual_seed(42)  # 固定随机种子以便复现
 
-depth = 2  # 网络深度
-width = 2  # 每层的宽度（整个网络宽度一致，方便残差连接）
-hiddens: list[Tensor] = []  # 网络隐藏层，存储各个网络层的权重
-out_layer: Tensor
 
-# 每个矩阵的行分别是神经元的权重+偏置
-# 第一行个隐藏层因为只有一个输入标量，所以是width*2（一个权重+一个偏置+自己的反馈）
-hiddens.append(torch.rand((width, 2 + width), requires_grad=True))
+class RNN:
+    def __init__(_self, depth=2, width=2, learning_rate=0.05):
+        """
+        设置深度、宽度
+        """
+        _self.depth = depth
+        _self.width = width
+        _self.learning_rate = learning_rate
+        _self.out_layer = torch.randn((1, width + 1), requires_grad=True)  # 输出层
 
-# 第一次前向传播时，上一次的输出全部置0
-for d in range(depth - 1):
-    # 后面隐藏层每行需要前一层的所有输入权重+一个偏置+自己反馈
-    hiddens.append(torch.rand((width, width + 1 + width), requires_grad=True))
+        # 每个矩阵的行分别是神经元的权重+偏置
+        # 第一行个隐藏层因为只有一个输入标量，所以是width*2（一个权重+一个偏置+自己的反馈）
+        # 后面隐藏层每行需要前一层的所有输入权重+一个偏置+自己反馈
+        _self.hidden_layers: list[Tensor] = [
+            (torch.rand((width, 2 + width)) * 0.2 - 0.1).requires_grad_(),
+            *[
+                (torch.rand((width, width + 1 + width)) * 0.2 - 0.1).requires_grad_()
+                for _ in range(depth - 1)
+            ],
+        ]
 
-out_layer = torch.randn((1, width + 1), requires_grad=True)  # 添加一个输出层
+    def forward(_self, xs: list[float], y: float | None = None) -> float | Tensor:
+        """
+        Args:
+                y (float | None): 如果y为非None值，表示是在进行训练，否则是在推导
+        """
+        with torch.set_grad_enabled(y is not None):
+            # 初始化各隐藏层上一次的输出
+            last_output: list[Tensor] = [
+                torch.zeros(_self.width, 1) for _ in range(_self.depth)
+            ]
 
+            # 整个窗口的梯度
+            total_loss: Tensor | None = None
+
+            # 训练时保存每一个时刻的推导结果，推理时表示最终输出
+            out: Tensor | None = None
+
+            if y is not None:
+                total_loss = torch.tensor(0.0)
+
+            for x_idx in range(len(xs)):
+                # 补1可以用于偏置，得到这样一个列向量 [[x_n][1]]，当前层的输入
+                layer_input = torch.tensor([[xs[x_idx]], [1]])
+                for l_idx in range(_self.depth):
+
+                    # 组装前一层输出和当前层上一次输出
+                    lastOut = last_output[l_idx]
+                    cat = torch.cat([lastOut, layer_input], dim=0)
+
+                    layer = _self.hidden_layers[l_idx]
+
+                    inner_output = layer @ cat  # 矩阵计算
+
+                    layer_output = F.tanh(inner_output)  # 激活函数
+
+                    last_output[l_idx] = layer_output  # 缓存本次输出
+
+                    # 在结果后面补一个标量1作为下一层输入，1用于偏置计算
+                    layer_input = torch.cat([layer_output, torch.ones((1, 1))], dim=0)
+
+                if y is not None:
+                    # 输出层使用线性激活函数（现在系数暂时为1）
+                    out = (_self.out_layer @ layer_input) * 1
+                    loss = F.mse_loss(torch.tensor([[y]]), out)
+                    assert total_loss is not None
+                    total_loss = total_loss + loss
+                elif x_idx == len(xs) - 1:
+                    out = (_self.out_layer @ layer_input) * 1
+
+            if y is not None:
+                assert total_loss is not None
+                return total_loss
+            else:
+                assert out is not None
+                return out.item()
+
+    def train(_self, xs: list[float], y: float):
+        total_loss = cast(Tensor, _self.forward(xs, y))
+
+        # 平均梯度，不计算平均梯度也没事，这里相当于是影响学习率而已，可以通过学习率调整
+        avg_loss = total_loss / len(xs)
+
+        avg_loss.backward()  # 反向传播
+
+        with torch.no_grad():  # 关闭求导系统（别让计算图继续记录梯度的推导了）
+            # 开始刷新参数
+            assert _self.out_layer.grad is not None
+            _self.out_layer -= _self.learning_rate * _self.out_layer.grad
+            _self.out_layer.grad = None  # 清空梯度，避免下轮训练被累加
+            for layer in _self.hidden_layers:
+                assert layer.grad is not None
+                layer -= _self.learning_rate * layer.grad
+                layer.grad = None  # 清空梯度，避免下轮训练被累加
+
+
+data_length = 3001  # 数据大小
+window = 10  # 训练和推理窗口
 
 # 生成训练数据
-primitiveData: list[float] = []
-for step in range(0, data_length):
-    primitiveData.append(sin(step * 0.5))
+train_data: list[float] = [sin(step * 0.5) for step in range(data_length)]
 
+rnn = RNN()
 
-"""
-这里不是对同一组数据反复训练，而是从窗口中取一段新数据
-"""
-# 开始训练
-for window_start in range(num_windows):
-    # 从原始数据取出训练窗口的数据
-    total_loss = torch.tensor(0.0)
-    last_output: list[Tensor] = []  # 各隐藏层上一次的输出
-    for idx in range(depth):
-        last_output.append(torch.zeros(width, 1))
-    for idx in range(window):
-        # 补1可以用于偏置，得到这样一个列向量 [[x_n][1]]
-        tmp = torch.tensor([[primitiveData[window_start + idx]], [1]])
-        for layerIdx in range(depth):
-            layer = hiddens[layerIdx]
-            lastOut = last_output[layerIdx]
-            # 组装本层上一次的输出和输入数据
-            tmp = layer @ torch.cat([lastOut, tmp], dim=0)
-            tmp = F.tanh(tmp)  # 执行激活函数
-            # 刷新上轮缓存
-            last_output[layerIdx] = tmp
-            # 在结果后面补一个标量1，用于下一层的偏置
-            tmp = torch.cat([tmp, torch.ones((1, 1))], dim=0)
-        out = (out_layer @ tmp) * 1  # 输出层使用线性激活函数（现在系数暂时为1）
-        loss = F.mse_loss(torch.tensor([[primitiveData[window_start + idx + 1]]]), out)
-        total_loss = total_loss + loss
+for step in range(data_length - 1 - window):
+    rnn.train(train_data[step : step + window], train_data[step + window])
 
-    total_loss = total_loss / window  # 计算平均值
-    total_loss.backward()  # 开始反向传播
-    with torch.no_grad():  # 关闭求导系统（别让计算图继续记录梯度的推导了）
-        # 开始刷新参数
-        assert out_layer.grad is not None
-        out_layer -= learning_rate * out_layer.grad
-        out_layer.grad = None  # 清空梯度，避免下轮训练被累加
-        for layer in hiddens:
-            assert layer.grad is not None
-            layer -= learning_rate * layer.grad
-            layer.grad = None  # 清空梯度，避免下轮训练被累加
-print("训练结束")
-
-# 清理训练阶段的输出缓存
-last_output: list[Tensor] = []  # 各隐藏层上一次的输出
-for d in range(depth):
-    last_output.append(torch.zeros(width, 1))
-
-with torch.no_grad():
-    data = primitiveData[0:window]
-    for idx, x in enumerate(data):
-        # 补1可以用于偏置，得到这样一个列向量 [[x_n][1]]
-        tmp = torch.tensor([[x], [1]])
-        for layerIdx in range(depth):
-            layer = hiddens[layerIdx]
-            lastOut = last_output[layerIdx]
-            tmp = layer @ torch.cat(
-                [lastOut, tmp], dim=0
-            )  # 组装本层上一次的输出和输入数据
-            tmp = F.tanh(tmp)  # 执行激活函数
-            last_output[layerIdx] = tmp  # 刷新上轮缓存
-            tmp = torch.cat(
-                [tmp, torch.ones((1, 1))], dim=0
-            )  # 在结果后面补一个标量1，用于下一层的偏置
-
-        if idx == len(data) - 1:  # 给出最后一个输入之后再使用输出层
-            out = (out_layer @ tmp) * 1  # 输出层使用线性激活函数（现在系数暂时为1）
-            print(f"预测值：{out.item()}，真实值：{primitiveData[window]}")
-            print(f"误差：{out.item()-primitiveData[window]}")
+for step in range(data_length - 1 - window):
+    real = train_data[step + window]
+    prediction = rnn.forward(train_data[step : step + window])
+    print(f"预测值：{prediction}，真实值：{real}，误差：{((prediction-real)*100):.6f}")
