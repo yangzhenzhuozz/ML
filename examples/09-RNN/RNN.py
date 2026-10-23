@@ -9,8 +9,8 @@ num_windows = 3000  # 训练次数
 batch_size = 5  # 训练批次大小，暂未使用
 learning_rate = 0.05  # 学习率
 
-depth = 5  # 网络深度
-width = 10  # 每层的宽度（整个网络宽度一致，方便残差连接）
+depth = 2  # 网络深度
+width = 2  # 每层的宽度（整个网络宽度一致，方便残差连接）
 hiddens: list[Tensor] = []  # 网络隐藏层，存储各个网络层的权重
 out_layer: Tensor
 
