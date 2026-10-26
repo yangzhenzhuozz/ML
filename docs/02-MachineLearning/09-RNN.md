@@ -152,3 +152,174 @@ $$L_t=\operatorname{Loss}(y_t,\hat y_t)$$
 2. 直接在真实架构中，按照第八章的知识点"计算图中节点被使用多次，梯度值累加"来刷新梯度，然后使用 $W_{\text{new}}=W-r*(g_1+g_2+g_3)$
 
 两个方案更新的结果是一样的，我们在数学逻辑上是自洽的。
+
+## 示例代码
+
+下面我们手搓一个RNN网络，根据输入的正弦序列预测下一个输出：
+
+```python :line-numbers {.line-numbers}
+from typing import Sequence, cast
+
+import torch
+from torch import Tensor
+from torch.nn import functional as F
+from math import sin
+
+import matplotlib.pyplot as plt
+
+# torch.manual_seed(42)  # 固定随机种子以便复现
+
+
+class RNN:
+    def __init__(_self, depth=2, width=2):
+        """
+        设置网络的深度、宽度
+        """
+        _self.depth = depth
+        _self.width = width
+
+        def init_layer(shape: Sequence[int]):
+            return (torch.randn(shape)).requires_grad_()
+
+        _self.out_layer = init_layer((1, width + 1))  # 输出层
+
+        # 每个矩阵的行分别是神经元的权重+偏置
+        # 第一行个隐藏层因为只有一个输入标量，所以是width*2（一个权重+一个偏置+自己的反馈）
+        # 后面隐藏层每行需要前一层的所有输入权重+一个偏置+自己反馈
+        _self.hidden_layers: list[Tensor] = [
+            init_layer((width, 2 + width)),
+            *[init_layer((width, width + 1 + width)) for _ in range(depth - 1)],
+        ]
+
+    def forward(
+        _self, xs: list[float], ys: list[float] | None = None
+    ) -> float | Tensor:
+        with torch.set_grad_enabled(ys is not None):
+            # 初始化各隐藏层上一次的输出
+            last_output: list[Tensor] = [
+                torch.zeros(_self.width, 1) for _ in range(_self.depth)
+            ]
+
+            # 整个窗口的梯度
+            total_loss: Tensor | None = None
+
+            # 训练时保存每一个时刻的推导结果，推理时表示最终输出
+            out: Tensor | None = None
+
+            if ys is not None:
+                total_loss = torch.tensor(0.0)
+
+            for data_idx in range(len(xs)):
+                # 补1可以用于偏置，得到这样一个列向量 [[x_n][1]]，当前层的输入
+                layer_input = torch.tensor([[xs[data_idx]], [1]])
+                for l_idx in range(_self.depth):
+
+                    # 组装前一层输出和当前层上一次输出
+                    lastOut = last_output[l_idx]
+                    cat = torch.cat([lastOut, layer_input], dim=0)
+
+                    layer = _self.hidden_layers[l_idx]
+
+                    inner_output = layer @ cat  # 矩阵计算
+
+                    layer_output = F.tanh(inner_output)  # 激活函数
+
+                    last_output[l_idx] = layer_output  # 缓存本次输出
+
+                    # 在结果后面补一个标量1作为下一层输入，1用于偏置计算
+                    layer_input = torch.cat([layer_output, torch.ones((1, 1))], dim=0)
+
+                if ys is not None:
+                    # 输出层使用线性激活函数（现在系数暂时为1）
+                    out = (_self.out_layer @ layer_input) * 1
+                    loss = F.mse_loss(torch.tensor([[ys[data_idx]]]), out)
+                    assert total_loss is not None
+                    total_loss = total_loss + loss
+                elif data_idx == len(xs) - 1:
+                    # 推理的时候，暂时不需要输出中间结果
+                    # 输出层使用线性激活函数（现在系数暂时为1）
+                    out = (_self.out_layer @ layer_input) * 1
+
+            if ys is not None:
+                assert total_loss is not None
+                return total_loss
+            else:
+                assert out is not None
+                return out.item()
+
+    def train(_self, xs: list[float], ys: list[float], learning_rate=0.05):
+        total_loss = cast(Tensor, _self.forward(xs, ys))
+
+        # 平均梯度，不计算平均梯度也没事，这里相当于是影响学习率而已，可以通过学习率调整
+        avg_loss = total_loss / len(xs)
+
+        avg_loss.backward()  # 反向传播
+
+        with torch.no_grad():  # 关闭求导系统（别让计算图继续记录梯度的推导了）
+            # 开始刷新参数
+            assert _self.out_layer.grad is not None
+            _self.out_layer -= learning_rate * _self.out_layer.grad
+            _self.out_layer.grad = None  # 清空梯度，避免下轮训练被累加
+            for layer in _self.hidden_layers:
+                assert layer.grad is not None
+                layer -= learning_rate * layer.grad
+                layer.grad = None  # 清空梯度，避免下轮训练被累加
+        return total_loss
+
+
+data_length = 3000  # 数据大小
+window = 10  # 训练和推理窗口
+
+# 生成训练数据
+t = [x * 0.5 for x in range(data_length)]
+train_data: list[float] = [sin(x * 0.5) for x in t]
+
+rnn = RNN()
+
+loss_list = []
+for step in range(data_length - (window + 1)):
+    w_s = step
+    loss = rnn.train(
+        train_data[w_s : w_s + window],
+        train_data[w_s + 1 : w_s + window + 1],
+        learning_rate=0.01,
+    )
+    loss_list.append(loss.item())
+
+result = []
+for step in range(data_length - (window + 1)):
+    real = train_data[step + window]
+    prediction = rnn.forward(train_data[step : step + window])
+    result.append({"real": real, "prediction": prediction})
+
+plt.figure()
+plt.plot([x * 0.5 for x in range(len(loss_list))], loss_list, label="损失值")
+plt.title("Loss示例")  # 标题
+plt.xlabel("X 轴 (时间)")  # X轴标签
+plt.ylabel("Y 轴 (损失)")  # Y轴标签
+plt.legend()  # 显示图例
+plt.grid(True)  # 显示网格线
+
+plt.figure()
+plt.plot(
+    [x * 0.5 for x in range(200)],
+    [item["real"] for item in result[:200]],
+    label="真实曲线",
+)
+plt.plot(
+    [x * 0.5 for x in range(200)][:200],
+    [item["prediction"] for item in result[:200]],
+    label="预测曲线",
+)
+plt.title("预测曲线")  # 标题
+plt.xlabel("X 轴 (时间)")  # X轴标签
+plt.ylabel("Y 轴")  # Y轴标签
+plt.legend()  # 显示图例
+plt.grid(True)  # 显示网格线
+
+
+plt.show()
+
+```
+
+我们使用一个滑动窗口来训练模型，运行上面的代码我们可以看到训练结果（因为是使用随机数初始化模型参数，可能出现无法收敛的情况，可以多运行几次）。不难看出，就算是 2 × 2的网络，对于正弦波这种比较简单的序列也有很好的识别结果。
