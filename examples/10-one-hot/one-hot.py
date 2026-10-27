@@ -1,5 +1,7 @@
 from typing import Sequence, cast
 
+import time
+
 import torch
 from torch import Tensor
 from torch.nn import functional as F
@@ -16,13 +18,20 @@ encoding_space = 27
 
 
 class RNN:
-    def __init__(self, depth=2, width=2):
+    def __init__(self, depth=2, width=2, device: torch.device | None = None):
+        # 有 CUDA 就用 GPU，否则回退到 CPU
+        # self.device = device or torch.device(
+        #     "cuda" if torch.cuda.is_available() else "cpu"
+        # )
+        self.device = "cpu"
+
         self.depth = depth
 
         self.width = width
 
         def init_layer(shape: Sequence[int]):
-            return (torch.randn(shape)).requires_grad_()
+            # 参数直接建在目标设备上，避免后面反复 .to(device)
+            return torch.randn(shape, device=self.device).requires_grad_()
 
         self.out_layer = init_layer(
             (encoding_space, width + 1)
@@ -40,18 +49,34 @@ class RNN:
         """
         生成一个二阶one-hot编码张量
         """
-        if s == " ":
-            return F.one_hot(torch.tensor([26], dtype=torch.long), num_classes=27).t()
-        else:
-            return F.one_hot(
-                torch.tensor([ord(s) - ord("a")], dtype=torch.long), num_classes=27
-            ).t()
+        idx = encoding_space - 1 if s == " " else ord(s) - ord("a")
+        # 输入张量必须和参数在同一设备上，否则矩阵乘会报 device mismatch
+        return F.one_hot(
+            torch.tensor([idx], dtype=torch.long, device=self.device),
+            num_classes=encoding_space,
+        ).t()
+
+    def decoding(self, t: Tensor) -> list[tuple[str, float]]:
+        """
+        将概率张量（27x1）解码为 (字符, 概率) 列表，按概率从高到低排序
+        """
+        probs = t.detach().flatten().tolist()  # (encoding_space,) 的一维概率列表
+
+        result: list[tuple[str, float]] = []
+        for idx, p in enumerate(probs):
+            # 0~25 对应 a~z，26 对应空格
+            ch = " " if idx == encoding_space - 1 else chr(ord("a") + idx)
+            result.append((ch, float(p)))
+
+        # 按概率从高到低排序后返回
+        return sorted(result, key=lambda kv: kv[1], reverse=True)
 
     def forward(self, xs: str, ys: str | None = None) -> Tensor:
         with torch.set_grad_enabled(ys is not None):
             # 初始化各隐藏层上一次的输出
             last_output: list[Tensor] = [
-                torch.zeros(self.width, 1) for _ in range(self.depth)
+                torch.zeros(self.width, 1, device=self.device)
+                for _ in range(self.depth)
             ]
 
             # 整个窗口的梯度
@@ -61,12 +86,14 @@ class RNN:
             out: Tensor | None = None
 
             if ys is not None:
-                total_loss = torch.tensor(0.0)
+                total_loss = torch.tensor(0.0, device=self.device)
 
             for data_idx in range(len(xs)):
                 # 补1可以用于偏置，得到这样一个列向量 [[x_n][1]]，当前层的输入
                 encoding_vec = self.encoding(xs[data_idx])
-                layer_input = torch.cat([encoding_vec, torch.tensor([[1]])], dim=0)
+                layer_input = torch.cat(
+                    [encoding_vec, torch.ones((1, 1), device=self.device)], dim=0
+                )
                 for l_idx in range(self.depth):
 
                     # 组装前一层输出和当前层上一次输出
@@ -82,7 +109,9 @@ class RNN:
                     last_output[l_idx] = layer_output  # 缓存本次输出
 
                     # 在结果后面补一个标量1作为下一层输入，1用于偏置计算
-                    layer_input = torch.cat([layer_output, torch.ones((1, 1))], dim=0)
+                    layer_input = torch.cat(
+                        [layer_output, torch.ones((1, 1), device=self.device)], dim=0
+                    )
 
                 if ys is not None:
                     # 输出层使用线性激活函数（现在系数暂时为1）
@@ -90,8 +119,8 @@ class RNN:
                     out = F.softmax(inner_linear, dim=0)  # 激活函数
                     target = self.encoding(ys[data_idx])  # 对输出编码
                     selected = out * target  # 逐元素相乘，保留正确字符对应的概率
-                    sum = selected.sum(dim=0)  # 累加得到正确字符的概率
-                    loss = -torch.log(sum)  #  负对数
+                    prob = selected.sum(dim=0)  # 累加得到正确字符的概率
+                    loss = -torch.log(prob)  #  负对数
                     assert total_loss is not None
                     total_loss = total_loss + loss
                 elif data_idx == len(xs) - 1:
@@ -128,30 +157,45 @@ class RNN:
         return total_loss
 
 
-rnn = RNN()
+def main():
+    rnn = RNN(depth=5, width=10)
 
-with open("data.txt") as file:
+    print(f"训练设备: {rnn.device}")
+
+    with open("examples/10-one-hot/data.txt") as file:
+        lines = [line.strip() for line in file]
+
     loss_list = []
-    for line in file:
-        line = line.strip()
-        loss = rnn.train(
-            line[:-1],
-            line[1:],
-            learning_rate=0.01,
-        )
-        loss_list.append(loss.item())
+    for epoch in range(20):
+        start = time.perf_counter()
+        epoch_loss: list[float] = []
+        for line in lines:
+            loss = rnn.train(
+                line[:-1],
+                line[1:],
+                learning_rate=0.01,
+            )
+            epoch_loss.append(loss.item())
+        loss_list.append(sum(epoch_loss) / len(epoch_loss))
+        print(f"训练完成{epoch}轮 耗时 {time.perf_counter() - start:.2f}s")
 
-input = "alice"
-ret = rnn.forward(input)
+    plt.figure()
+    plt.plot([x * 0.5 for x in range(len(loss_list))], loss_list, label="损失值")
+    plt.title("Loss示例")  # 标题
+    plt.xlabel("X 轴 (时间)")  # X轴标签
+    plt.ylabel("Y 轴 (损失)")  # Y轴标签
+    plt.legend()  # 显示图例
+    plt.grid(True)  # 显示网格线
 
-print(f'"{input}"的下一个字符是:{ret.tolist()}')
+    plt.show()
 
-plt.figure()
-plt.plot([x * 0.5 for x in range(len(loss_list))], loss_list, label="损失值")
-plt.title("Loss示例")  # 标题
-plt.xlabel("X 轴 (时间)")  # X轴标签
-plt.ylabel("Y 轴 (损失)")  # Y轴标签
-plt.legend()  # 显示图例
-plt.grid(True)  # 显示网格线
+    while True:
+        text = input()
+        ret = rnn.forward(text)
+        ch, p = rnn.decoding(ret)[0]
+        print(f'"{text}"的下一个字符是:{ch} (概率 {p:.4f})')
+        text += ch
 
-plt.show()
+
+if __name__ == "__main__":
+    main()
