@@ -188,7 +188,7 @@ $$m=\int_0^L \rho(t)dt$$
 
 回到概率密度函数，假设密度函数在x附近是固定的，就表示在x附近取一小段几何体积作为事件A，事件A的概率=事件A的几何体积 × f(x)，所以这个函数叫做概率密度函数。
 
-### 伯努利试验
+### 二项分布
 
 如果一个随机试验，只关注事件A是否发生，即该试验只有 $A$ 和 $\overline A$ 两种试验结果，则称这种试验为 **伯努利试验**，将这个试验独立做n次（即任意两次试验互不影响），每次试验的 $P(A)$ 都是固定的，则称为 **n重伯努利试验**
 
@@ -208,7 +208,122 @@ $$A,\overline{A},A,A,\overline{A}$$
 
 $$P=p \times (1-p) \times p \times p \times (1-p)=p^3 \times (1-p)^2$$
 
-不难发现，只要事件A发生的次数是2，不管以哪个结果序列出现，每个结果序列的概率是一样的。
+不难发现，只要事件A发生的次数是3，不管以哪个结果序列出现，每个结果序列的概率是一样的。如果我们要统计事件A发生2次的概率，只需要把所有发生3次的序列概率相加即可，因为每个序列都是不相容的，得到
+$$P(\text{A发生3次})=C_5^3 p^3(1-p)^2$$
+
+对于n重伯努利试验，随机变量X表示事件A发生的次数，有 $P(X=k)=C_n^k p^k(1-p)^{n-k}$，并且$C_n^k p^k(1-p)^{n-k}$ 正好是二项式 $(p+1-p)^n$ 的展开式中出现 $p^k$ 的那一项，所以叫做二项分布。
+
+随机变量X服从参数为n,p的二项分布记为**X~B(n,p)**
+
+### 泊松分布
+
+在伯努利试验中，我们设想的是事件A在每次发生的概率是一个定值 $P(A)=p$，那么在n重伯努利试验中，事件A的发生次数期望就是np，随着试验次数变化，A的发生次数也跟着线性变化。如果现在有另外一种试验，当你做了很多次的时候，A发生次数的期望是一个定值，但是每次试验的概率是相等的。可以想象有一个系统在宏观调控概率，在你做完试验之后再对所有试验加一个修正参数，动态调整事件A的发生概率p，使得次数期望为定值λ。如果从二项分布的角度考虑有
+
+$$
+P(X=k)=C_n^k p^k (1-p)^{n-k}
+$$
+
+因为有宏观系统在调整概率p使得次数期望为定值，则设次数期望 $np=\lambda$，当 $n \to \infty$ 时，有
+
+$$
+\begin{aligned}
+    & \lim_{n \to \infty}P(X=k) \\
+    = & \lim_{n \to \infty}C_n^k p^k (1-p)^{n-k} \\
+    = & \lim_{n \to \infty}\frac{n \times (n-1) \times \cdots \times (n-k+1)}{k!}(\frac{\lambda}{n})^k (1-\frac{\lambda}{n})^{n-k} \\
+    = & \lim_{n \to \infty}\frac{\lambda ^k}{k!}\frac{n \times (n-1) \times \cdots \times (n-k+1)}{n^k}(1-\frac{\lambda}{n})^n(1-\frac{\lambda}{n})^{-k} \\
+\end{aligned}
+$$
+
+因为
+
+$$
+\begin{aligned}
+    \lim_{n \to \infty} & = \frac{n \times (n-1) \times \cdots \times (n-k+1)}{n^k}=1 \\
+    \lim_{n \to \infty} & = (1-\frac{\lambda}{n})^n=e^{-\lambda} \\
+    \lim_{n \to \infty} & = (1-\frac{\lambda}{n})^{-k}=1
+\end{aligned}
+$$
+
+所以有
+
+$$\lim_{n \to \infty}P(X=k)=\frac{\lambda ^k}{k!} e^{-\lambda} $$
+
+这种分布就是泊松分布。当n很大，p很小的时候，系统宏观调控的时候是线性调控的，这时候调控对p的影响就很小，所以这种场景下可以用泊松分布来近似二项分布。
+
+### 高斯分布
+
+我们现在在用尺子测量一个物体的长度，因为观察角度、0点偏移等各种原因，现在测量结果是 $\set{x_1,x_2,\cdots,x_n}$，设真实长度是θ，则测量误差为 $\set{\theta - x_1,\theta - x_2,\cdots,\theta - x_n}$，因为我们每次测量的时候，不同误差值概率是不同的（误差肯定是越靠近0概率越高，比如用一个刻度为毫米的尺子去测量10cm长的物体，误差2cm肯定比误差0.5cm的情况小得多），设误差的概率密度函数为 $p=f(\delta)$，那么我们就记这次测量数据的概率为
+
+$$L(\theta)=f(x_1-\theta)f(x_2-\theta)\cdots f(x_n-\theta)$$
+
+P是我们取得这次测量数据的概率密度，我们应该假设有 $\theta$ 和函数 $f$ 值使得我们取得这组数据的概率尽量大，因为我们取得这组数据的概率越大就越有代表性。为了方便计算，我们使用一个数学技巧，对函数 $L$ 对数，把乘法变成加法，即
+
+$$\ln L=\ln f(x_1-\theta)+\ln f(x_2-\theta)+\cdots+\ln f(x_n-\theta)$$
+
+因为对数函数也是单调递增的，即当 $t$ 取得最大值的时候，$\ln t$ 也取得最大值，对函数 $\ln L$ 求导，得到
+
+$$(\ln L)'=\dfrac{f'(x_1-\theta)}{f(x_1-\theta)}+\dfrac{f'(x_2-\theta)}{f(x_2-\theta)}+\cdots+\dfrac{f'(x_n-\theta)}{f(x_n-\theta)}$$
+
+要找出最大值，我们首先想到的就是导数为0的点可能是一个最大值点，即至少应该有
+
+$$\sum_{i=1}^n \frac{f'(x_i-\theta)}{f(x_i-\theta)}=0$$
+
+并且我们做一个假设：测量数据的平均值 $\overline{x}$ 就是我们想要的 $\theta$ 值。这时候约束就变成了
+
+1. $\sum\limits_{i=0}^n (x_i-\overline{x})=0$ (以算术平均数为基准，误差的累积为0)
+2. $\sum\limits_{i=1}^n \frac{f'(x_i-\overline{x})}{f(x_i-\overline{x})}=0$
+
+为了方便书写，令 $\epsilon_i=x_i-\overline{x}$，$g(\epsilon)=\ln f(\epsilon)$，上述的两个约束就变成了
+
+1. $\sum\limits_{i=0}^n \epsilon_i=0$
+2. $\sum\limits_{i=0}^n g'(\epsilon_i)=0$
+
+根据上述两个约束，我们可以推导出 $g'$的重要性质：
+
+- 假设测量了2个值，则得到2个误差，则有:
+    1. $a+b=0 \implies a=-b$
+    2. $g'(a)+g'(b)=0 \implies g'(a)=-g'(-a) \implies \text{g'为奇函数}$
+
+- 假设测量了3个值，则得到3个误差，因为误差之和为0，则有:
+    1. $a+b+c=0 \implies a+b=-c$
+    2. $g'(a)+g'(b)=-g'(c)=-g'(-(a+b))=g'(a+b)$
+
+如果我们再假设g'是连续函数，根据 $g'(a)+g'(b)=g'(a+b)$ 可以得到 $g'(ax)=ag'(x)$，所以有 $g'(x)=C_1x$ （过原点的一条直线）。
+所以有 $g(x)=\frac{C_1}{2}x^2+C_2$，代回 $g(x)=\ln f(x)$，得到
+$$f(x)=e^{C_2}e^{C_1x^2}$$
+
+概率密度函数的无穷积分为1，即$\int_{-\infty}^\infty e^{C_2}e^{C_1x^2} dx =1$，$\int_{-\infty}^\infty e ^{-x^2}$ 这个积分是著名的高斯积分（不要试图在一维代数计算，可以用二维的极坐标来计算），当 $x^2$ 的系数小于0时，公式如下：
+
+$$\int_{-\infty}^\infty e^{-kx^2} dx=\sqrt {\frac{\pi}{k} } \qquad \text{(k>0)}$$
+
+为了书写方便，我们把 $f(x)$ 写成
+
+$$f(x)=e^{C_2}e^{-C_1x^2}$$
+
+因为概率密度的无穷积分为1，我们可以计算出 $C_1$、$C_2$ 的关系
+
+$$
+\begin{aligned}
+    1 &=\int_{-\infty}^\infty e^{C_2}e^{-C_1x^2} \\
+      &=e^{C_2}\sqrt{\frac{\pi}{C_1}}
+\end{aligned}
+$$
+
+得到
+
+$C_2=-\frac{1}{2}\ln \frac{\pi}{C_1}$
+
+这时候我们带入原式得到
+
+$$
+\begin{aligned}
+    f(x)&=e^{C_2}e^{-C_1x^2}\\
+        &=\frac{1}{\sqrt \frac{\pi}{C_1}}e^{-C_1x^2} \\
+        &=\sqrt \frac{C_1}{\pi}e^{-C_1x^2}
+\end{aligned}
+$$
+
+这就是正态分布的概率密度函数。并且我们前面的假设：测量数据的平均值 $\overline{x}$ 就是我们想要的 $\theta$ 值说明，在以平均值为最优真实值的情况下的概率分布就是高斯分布。
 
 ##### 下面是其他内容
 
