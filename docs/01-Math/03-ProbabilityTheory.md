@@ -262,7 +262,7 @@ $$\ln L=\ln f(x_1-\theta)+\ln f(x_2-\theta)+\cdots+\ln f(x_n-\theta)$$
 
 因为对数函数也是单调递增的，即当 $t$ 取得最大值的时候，$\ln t$ 也取得最大值，对函数 $\ln L$ 求导，得到
 
-$$(\ln L)'=\dfrac{f'(x_1-\theta)}{f(x_1-\theta)}+\dfrac{f'(x_2-\theta)}{f(x_2-\theta)}+\cdots+\dfrac{f'(x_n-\theta)}{f(x_n-\theta)}$$
+$$(\ln L)'=\frac{f'(x_1-\theta)}{f(x_1-\theta)}+\frac{f'(x_2-\theta)}{f(x_2-\theta)}+\cdots+\frac{f'(x_n-\theta)}{f(x_n-\theta)}$$
 
 要找出最大值，我们首先想到的就是导数为0的点可能是一个最大值点，即至少应该有
 
@@ -323,9 +323,241 @@ $$
 \end{aligned}
 $$
 
-这就是正态分布的概率密度函数。并且我们前面的假设：测量数据的平均值 $\overline{x}$ 就是我们想要的 $\theta$ 值说明，在以平均值为最优真实值的情况下的概率分布就是高斯分布。
+这就是正态分布的概率密度函数。并且我们前面的假设：测量数据的平均值 $\overline{x}$ 就是我们想要的 $\theta$ 值说明，在以平均值为最优的情况下的概率分布就是高斯分布。
 
-##### 下面是其他内容
+## 随机变量的数字特征
+
+### 期望
+
+对于离散型随机变量，如果 $\sum\limits_{i=0}^\infty xp_i$ 绝对收敛，则把
+$$E(X)=\sum_{i=0}^\infty xp_i$$
+叫做离散型随机变量的期望。而对于连续型随机变量，$f(x)$ 为其概率密度函数，如果 $\int_{-\infty}^\infty xf(x)dx$ 绝对收敛，则把
+$$E(x)=\int_{-\infty}^\infty xf(x)dx$$
+叫做连续型随机变量的期望。如果继续用铁丝的密度函数类比，期望就是这根铁丝的重心坐标。期望的一些数学性质：
+
+1. 如果c为常数，则 $E(c)=c$
+2. 设X为随机变量，k、c为常数，则 $E(kX+c)=kE(X)+c$
+3. 设X、Y为任意随机变量（不管是否相关），则 $E(X+Y)=E(X)+E(Y)$
+4. 设X、Y为独立的随机变量（必须完全独立），则 $E(XY)=E(X)E(Y)$
+
+### 方差和标准差
+
+对于随机变量X，我们把
+
+$$D(X)=E\{[X-E(x)]^2\}$$
+
+叫做方差（如果存在），方差的算术平方根
+
+$$\sigma=\sqrt{D}$$
+
+叫做标准差，方差和标准差是衡量和期望偏离程度的指标。
+
+离散型随机变量的方差
+$$D(X)=\sum_{i=0}^\infty (x_i-\sum_{j=0}^\infty x_jp_j)^2p_i$$
+
+连续型随机变量的方差
+
+$$D(x)=\int_{-\infty}^\infty(x-\int_{-\infty}^\infty tf(t)dt)^2f(x)dx$$
+
+### 协方差
+
+设(X、Y)是二维随机变量，则把 $\operatorname{cov}(X,Y)= E\{[X-E(X)][Y-E(Y)]\}$ 叫做两个变量的协方差（如果存在），协方差是衡量两个变量同时偏离自己期望的指标。因为
+
+$$
+\begin{aligned}
+     & E\{[X-E(X)][Y-E(Y)]\} \\
+    =& E\{XY-XE(Y)-YE(X)+E(X)E(Y)\} \\
+    =& E(XY)-E(X)E(Y)-E(Y)E(X)+E(X)E(Y) \\
+    =& E(XY)-E(X)E(Y)
+\end{aligned}
+$$
+
+所以 $\operatorname{cov}(X,Y)=E(XY)-E(X)E(Y)$ 是协方差的快速计算方法。协方差的一些数学性质：
+
+设X、Y、$X_1$ 与 $X_2$ 为任意的随机变量，c、k和l为常数，则有：
+
+1. $\operatorname{cov}(X,c)=0$
+2. $\operatorname{cov}(X,Y)=\operatorname{cov}(Y,X)$
+3. $\operatorname{cov}(kX,lY)=kl\operatorname{cov}(X,Y)$
+4. $\operatorname{cov}(X_1+X_2,Y)=\operatorname{cov}(X_1,Y)+\operatorname{cov}(X_2,Y)$
+
+### 相关系数
+
+我们在计算协方差的时候，如果选择了不同的单位，比如身高-体重，用米和千克或者厘米和克，协方差会差十万倍。可以将随机变量标准化之后再计算协方差，令 $X^*=\frac{X-E(X)}{\sqrt{D(X)}}$、$Y^*=\frac{Y-E(Y)}{\sqrt{D(Y)}}$，然后再计算 $\operatorname{cov}(X^*,Y^*)$，得到的就是相关系数，也叫做标准化协方差。
+
+$$
+\begin{aligned}
+    \operatorname{cov}(X^*,Y^*) &= \operatorname{cov}(\frac{X-E(X)}{\sqrt{D(X)}},\frac{Y-E(Y)}{\sqrt{D(Y)}})\\
+                                &= E(\frac{X-E(X)}{\sqrt{D(X)}}\frac{Y-E(Y)}{\sqrt{D(Y)}})-E(\frac{X-E(X)}{\sqrt{D(X)}})E(\frac{Y-E(Y)}{\sqrt{D(Y)}})
+\end{aligned}
+$$
+
+因为
+
+$$
+\begin{aligned}
+    E(\frac{X-E(X)}{\sqrt{D(X)} })=\frac{E(X)-E(X)}{\sqrt{D(X)} }=0 \\
+    E(\frac{Y-E(Y)}{\sqrt{D(Y)} })=\frac{E(Y)-E(Y)}{\sqrt{D(Y)} }=0
+\end{aligned}
+$$
+
+所以
+
+$$\rho(X,Y)=\operatorname{cov}(X^*,Y^*)=\frac{\operatorname{cov}(X,Y)}{\sqrt{D(X)D(Y)} }$$
+
+相关系数的数学性质：
+
+1. $|\rho_{xy}|=1$ 时，说明X、Y完全线性相关，有 $P(Y=aX+b)=1$，就是对X的每一个样本点，在Y中都有y=ax+b对应的样本点。
+2. X、Y不相关时，$|\rho_{xy}|=0$，但是不能由 $|\rho_{xy}|=0$ 推导出X、Y线性无关。
+3. $0<\rho_{xy}<1$ 时，表示Y随着X增大的总体增大趋势（存在部分样本随X增大而减小）
+4. $-1<\rho_{xy}<0$ 时，表示Y随着X增大的总体减小趋势（存在部分样本随X增大而增大）
+
+## 大数定律与中心极限定理
+
+### 概率不等式（收敛性推导的基础）
+
+在推导大数定律前，需要两个衡量“偏差概率上限”的重要数学工具：
+
+1. 马尔可夫不等式：
+   对于非负随机变量 $X \ge 0$ 和任意 $a > 0$：
+   $$P(X \ge a) \le \frac{E(X)}{a}$$
+   证：
+
+    > 因为随机变量非负数，所以有 $E(X)=\int_0^\infty x f(x)dx$
+    > 我们在x=a处切一下，得到 $E(X)=\int_0^a x f(x)dx+\int_a^\infty x f(x)dx$
+    > 因为 $\int_0^a x f(x)dx>0$，$\int_a^\infty x f(x)dx>\int_a^\infty a f(x)dx$（在这个积分区间，x都是大于a）
+    > 所以有 $E(X) \ge \int_a^\infty a f(x)dx$
+    > 而 $P(X\ge a)=\int_a^\infty f(x)dx$
+    > 所以 $aP(X\ge a)=a\int_a^\infty f(x)dx=\int_a^\infty af(x)dx$
+    > 即 $aP(X\ge a)\le E(X)$
+    > 得到 $P(X \ge a) \le \frac{E(X)}{a}$
+
+    _直觉_：若平均考分是 60 分，考到 120 分以上的人不可能超过 $60/120 = 50\%$。
+
+2. 切比雪夫不等式：
+   有时候我们想研究随机变量偏离期望的概率，即 $P(|X-\mu| \ge \epsilon )$，这时候应该怎么算呢？
+   因为 $|X-\mu| \ge 0$，$\epsilon \ge 0$
+   所以 $|X-\mu| \ge \epsilon$ 和 $(X-\mu)^2\ge \epsilon ^ 2$ 完全等价
+   即 $P(|X-\mu| \ge \epsilon )=P((X-\mu)^2 \ge \epsilon^2 )$
+   这时候就变成了一个马尔可夫不等式，得到
+   $$P((X-\mu)^2 \ge \epsilon^2 )\le \frac{E(X-\mu)^2}{\epsilon^2}$$
+   右边分子就是方差 $D(X)$，所以得到
+   $$P(|X-\mu| \ge \epsilon )\le \frac{D(X)}{\epsilon^2}$$
+   _直觉_：随机变量偏离其期望超过 $\varepsilon$ 的概率，受制于方差的大小。方差越小，偏离大偏差的可能性就越低。
+
+---
+
+### 大数定律（Law of Large Numbers, LLN）
+
+设 $X_1, X_2, \dots, X_n$ 序列是独立同分布（i.i.d.）的随机变量，期望均为 $\mu$，方差均为 $\sigma^2$。记样本均值为：
+$$\bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i$$
+
+#### 切比雪夫大数定律（弱大数定律）
+
+由期望与方差的性质得：$E(\bar{X}_n) = \mu$，$D(\bar{X}_n) = \frac{\sigma^2}{n}$。
+代入切比雪夫不等式：
+$$P(|\bar{X}_n - \mu| \ge \varepsilon) \le \frac{\sigma^2}{n\varepsilon^2}$$
+
+当 $n \to \infty$ 时，右端趋于 0，即：
+$$\lim_{n \to \infty} P(|\bar{X}_n - \mu| < \varepsilon) = 1$$
+**结论**：样本均值 $\bar{X}_n$ **依概率收敛** 于总体期望 $\mu$（记作 $\bar{X}_n \xrightarrow{P} \mu$）。
+
+#### 伯努利大数定律
+
+在 $n$ 重伯努利试验中，设事件 $A$ 发生的频率为 $\frac{n_A}{n}$，概率为 $p$。当 $n \to \infty$ 时，频率依概率收敛于概率：
+$$\frac{n_A}{n} \xrightarrow{P} p$$
+
+> **机器学习映射：经验风险最小化（ERM）**
+> 在机器学习中，我们无法知道全量真实数据分布 $P(X,Y)$ 下的“期望风险（真实 Loss）”，只能通过 $n$ 个训练样本计算“经验风险（训练 Loss）”：
+> $R_{emp}(w) = \frac{1}{n} \sum_{i=1}^n L(f(x_i; w), y_i)$
+> 大数定律保证了：只要样本量 $n$ 足够大，**训练 Loss 就能无偏逼近真实 Loss**。
+
+---
+
+### 中心极限定理（Central Limit Theorem, CLT）
+
+大数定律说明了 $\bar{X}_n \to \mu$ 的极限趋势，而中心极限定理则回答了：**在收敛的过程中，样本均值的误差服从什么分布？**
+
+#### 林德伯格-勒维（Lindeberg-Lévy）定理
+
+设 $X_1, X_2, \dots, X_n$ 独立同分布，期望为 $\mu$，方差为 $\sigma^2 > 0$。当 $n$ 足够大时，和变量 $\sum_{i=1}^n X_i$ 的标准化结果收敛到标准正态分布：
+$$Z_n = \frac{\bar{X}_n - \mu}{\sigma / \sqrt{n}} = \frac{\sum_{i=1}^n X_i - n\mu}{\sqrt{n}\sigma} \xrightarrow{d} N(0, 1)$$
+
+> **机器学习映射：为什么高斯噪声假设无处不在？**
+> 现实世界或神经网络梯度中的噪声，本质上是海量微小且独立的随机因素叠加的结果。由 CLT 可知，**大量独立随机变量之和渐进服从正态分布**。这为数据建模中将误差项假设为高斯分布（$N(0, \sigma^2)$）提供了坚实的理论依据。
+
+---
+
+## 参数估计（Parameter Estimation）
+
+已知总体分布的形式（如高斯分布 $N(\mu, \sigma^2)$、伯努利分布 $B(1, p)$），但其中参数 $\theta$ 未知，需要通过样本数据 $x_1, x_2, \dots, x_n$ 推算 $\theta$。
+
+### 1. 矩估计法（Method of Moments）
+
+- **核心思想**：用样本矩（算术平均）等价替换总体矩（理论期望）。
+- **步骤**：
+    1. 计算总体 $k$ 阶原点矩 $\alpha_k(\theta) = E(X^k)$。
+    2. 计算样本 $k$ 阶原点矩 $A_k = \frac{1}{n} \sum_{i=1}^n x_i^k$。
+    3. 令 $\alpha_k(\theta) = A_k$，求解方程组得到参数估计量 $\hat{\theta}$。
+
+---
+
+### 2. 极大似然估计法（Maximum Likelihood Estimation, MLE）
+
+- **核心思想**：“**已经发生的事，最具发生的理由**”。选择能够使已观测到的数据样本出现概率（似然度）最大化的参数 $\theta$。
+
+#### 一般求解步骤：
+
+1. **构造似然函数 $L(\theta)$**：
+   对于 i.i.d. 样本 $x_1, x_2, \dots, x_n$：
+    - 离散型：$L(\theta) = \prod_{i=1}^n P(X = x_i; \theta)$
+    - 连续型：$L(\theta) = \prod_{i=1}^n f(x_i; \theta)$
+2. **取对数（Log-Likelihood）**：连乘化为连加，方便求导：
+   $$\ln L(\theta) = \sum_{i=1}^n \ln f(x_i; \theta)$$
+3. **求导并令极值点导数为 0**：
+   $$\frac{d \ln L(\theta)}{d\theta} = 0 \implies \text{解出 } \hat{\theta}_{MLE}$$
+
+---
+
+### 3. MLE 与机器学习损失函数的推导
+
+#### 场景 A：拟合正态分布误差 $\to$ 导出均方误差损失（MSE / L2 Loss）
+
+假设目标值 $y_i = w^T x_i + \epsilon_i$，其中噪声 $\epsilon_i \sim N(0, \sigma^2)$ 独立同分布。
+即条件概率满足 $y_i | x_i; w \sim N(w^T x_i, \sigma^2)$，概率密度为：
+$$f(y_i | x_i; w) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{(y_i - w^T x_i)^2}{2\sigma^2}\right)$$
+
+写出对数似然函数：
+$$\ln L(w) = \sum_{i=1}^n \left[ \ln\frac{1}{\sqrt{2\pi}\sigma} - \frac{(y_i - w^T x_i)^2}{2\sigma^2} \right]$$
+
+要使 $\ln L(w)$ 最大，等价于使第二项减号后面的部分最小：
+$$\min_w \sum_{i=1}^n (y_i - w^T x_i)^2$$
+**结论**：**回归任务中的 MSE（均方误差）损失，本质上就是假设残差服从高斯分布时的极大似然估计！**
+
+#### 场景 B：二分类伯努利分布 $\to$ 导出交叉熵损失（Cross-Entropy Loss）
+
+对于二分类问题，$y_i \in \{0, 1\}$，模型预测概率 $\hat{y}_i = P(y_i=1|x_i; w)$。
+分布可表示为伯努利形式：
+$$P(y_i | x_i; w) = \hat{y}_i^{y_i} (1 - \hat{y}_i)^{1 - y_i}$$
+
+写出对数似然函数：
+$$\ln L(w) = \sum_{i=1}^n \left[ y_i \ln \hat{y}_i + (1 - y_i) \ln (1 - \hat{y}_i) \right]$$
+
+最大化似然函数等价于最小化负对数似然（Negative Log-Likelihood, NLL）：
+$$\text{Loss}(w) = -\sum_{i=1}^n \left[ y_i \ln \hat{y}_i + (1 - y_i) \ln (1 - \hat{y}_i) \right]$$
+**结论**：**二分类逻辑回归（Logistic Regression）中的交叉熵损失，本质上就是对伯努利分布做极大似然估计！**
+
+---
+
+### 4. 最大后验估计（MAP）与正则化
+
+似然估计 MLE 只考虑数据 $P(\text{数据}|\theta)$，而 **MAP（Maximum A Posteriori）** 引入了参数的**先验概率 $P(\theta)$**：
+$$\theta_{MAP} = \arg\max_\theta P(\theta | \text{数据}) = \arg\max_\theta \frac{P(\text{数据} | \theta) P(\theta)}{P(\text{数据})} = \arg\max_\theta \left[ \ln P(\text{数据} | \theta) + \ln P(\theta) \right]$$
+
+- **高斯先验（Gaussian Prior）**：假设参数权重 $w \sim N(0, \sigma_w^2)$，有 $\ln P(w) \propto -||w||_2^2$。
+  $\to$ 代入 MAP 求解等价于 **MLE + L2 正则化 (Weight Decay)**。
+- **拉普拉斯先验（Laplace Prior）**：假设参数权重 $w \sim \text{Laplace}(0, b)$，有 $\ln P(w) \propto -||w||_1$。
+  $\to$ 代入 MAP 求解等价于 **MLE + L1 正则化 (Lasso, 促进稀疏解)**。
 
 ---
 
