@@ -292,7 +292,7 @@ $$\sum_{i=1}^n \frac{f'(x_i-\theta)}{f(x_i-\theta)}=0$$
 所以有 $g(x)=\frac{C_1}{2}x^2+C_2$，代回 $g(x)=\ln f(x)$，得到
 $$f(x)=e^{C_2}e^{C_1x^2}$$
 
-概率密度函数的无穷积分为1，即$\int_{-\infty}^\infty e^{C_2}e^{C_1x^2} dx =1$，$\int_{-\infty}^\infty e ^{-x^2}$ 这个积分是著名的高斯积分（不要试图在一维代数计算，可以用二维的极坐标来计算），当 $x^2$ 的系数小于0时，公式如下：
+概率密度函数的无穷积分为1，即$\int_{-\infty}^\infty e^{C_2}e^{C_1x^2} dx =1$，$\int_{-\infty}^\infty e ^{-x^2}dx$ 这个积分是著名的高斯积分（不要试图在一维代数计算，可以用二维的极坐标来计算），当 $x^2$ 的系数小于0时，公式如下：
 
 $$\int_{-\infty}^\infty e^{-kx^2} dx=\sqrt {\frac{\pi}{k} } \qquad \text{(k>0)}$$
 
@@ -558,7 +558,7 @@ $$\lim_{n \to \infty}\left(\frac{\sum\limits_{i=1}^n X_i-n\mu}{\sqrt{n}\sigma}\r
 
 已知总体分布的形式（如高斯分布 $N(\mu, \sigma^2)$、伯努利分布 $B(1, p)$），但其中参数 $\theta$ 未知，需要通过样本数据 $x_1, x_2, \dots, x_n$ 推算 $\theta$。
 
-### 1. 矩估计法
+### 矩估计法
 
 矩估计的核心思想是：用样本的原点矩替换总体原点矩。设总体X的k阶原点矩为 $\mu_k=E(X^k)$，参数为 $\theta=\varphi(\mu_1,\mu_2,\dots,\mu_m)$，样本的k阶原点矩为 $A_k=\frac{1}{n}\sum\limits_{i=1}^n X_i^k$ （大数定律，期望依概率收敛于算术平均值），则 $\theta$ 的估计量 $\hat{\theta}=\varphi(A_1,A_2,\dots,A_m)$
 
@@ -578,7 +578,7 @@ $$\lim_{n \to \infty}\left(\frac{\sum\limits_{i=1}^n X_i-n\mu}{\sqrt{n}\sigma}\r
 
 ---
 
-### 2. 极大似然估计法
+### 极大似然估计法
 
 假设总体X的分布可取多种参数 $(\theta_1,\theta_2,\dots,\theta_n)$，那么应该选择让现有样本出现概率（似然度）最大的参数。
 
@@ -629,27 +629,93 @@ $$\lim_{n \to \infty}\left(\frac{\sum\limits_{i=1}^n X_i-n\mu}{\sqrt{n}\sigma}\r
 
 2. 将似然函数取对数，把连乘变称连加，方便求导
    $$\ln L(\theta)=\sum_{i=1}^n\ln f(x_i;\theta)$$
-3. 求导并解出导数为0的 $\hat \theta$ 值。*对于指数族分布（正态、伯努利、泊松等），对数似然函数为严格凹函数，驻点唯一即为全局极大值点。*
+3. 求导并解出导数为0的 $\hat \theta$ 值。_对于指数族分布（正态、伯努利、泊松等），对数似然函数为严格凹函数，驻点唯一即为全局极大值点。_
    $$\frac{d\ln L}{d\theta}=0$$
 
----
+**例 6**
 
-### 3. MLE 与机器学习损失函数的推导
+> 设总体X服从正态分布 $X\sim N(\mu,\sigma^2)$，现在观测到一组样本为 $(x_1,x_2,\dots,x_n)$，使用最大似然计算 $\hat \mu$ 和 $\hat \sigma$
+>
+> 解：
+>
+> 列出似然函数
+> $$L(\mu,\sigma)=\prod_{i=1}^n \frac{1}{\sqrt{2\pi} \sigma}e ^{-\dfrac{(x_i-\mu)^2}{2\sigma^2} }$$
+> 取对数得
+> $$\ln L(\mu,\sigma)=\sum_{i=1}^n \ln [\frac{1}{\sqrt{2\pi} \sigma}e ^{-\dfrac{(x_i-\mu)^2}{2\sigma^2} }]$$
+>
+> 化简
+>
+> $$
+> \begin{aligned}
+>       \ln L(\mu,\sigma) &=\sum_{i=1}^n \left\{ \ln \frac{1}{\sqrt{2\pi} \sigma}+\ln \left[e^{-\dfrac{(x_i-\mu)^2}{2\sigma^2} }\right]\right\}\\
+>         &=\sum_{i=1}^n \left[ \ln \frac{1}{\sqrt{2\pi} \sigma}- \dfrac{(x_i-\mu)^2}{2\sigma^2} \right] \\
+>         &=-n \ln (\sqrt{2\pi}\sigma)-\frac{1}{2\sigma^2} \sum_{i=1}^n(x_i-\mu)^2 \\
+>         &=-n \ln (\sqrt{2\pi}) -n \ln \sigma -\frac{1}{2\sigma^2} \sum_{i=1}^n(x_i-\mu)^2
+> \end{aligned}
+> $$
+>
+> 求导
+>
+> $$
+> \begin{aligned}
+>  \frac{\partial \ln L}{\partial \mu} &=0-0-\frac{1}{2\sigma^2} \sum_{i=1}^n[2(x_i-\mu)(-1)] \\
+>        &= \frac{1}{\sigma^2}\sum_{i=1}^n(x_i-\mu) \\
+>        &= \frac{1}{\sigma^2}\sum_{i=1}^nx_i-\frac{1}{\sigma^2}\sum_{i=1}^n\mu\\
+>        &= \frac{n\bar x}{\sigma^2}-\frac{n\mu}{\sigma^2}
+> \end{aligned}
+> $$
+>
+> 令导数为0，解方程
+> $$\frac{n\bar x}{\sigma^2}-\frac{n\mu}{\sigma^2}=0$$
+> 得到 $\hat \mu=\bar x$
+>
+> 接下来对 $\sigma$ 求导
+>
+> $$\frac{\partial \ln L}{\partial \sigma}=0-\frac{n}{\sigma}+\frac{1}{\sigma^3}\sum\limits_{i=1}^n(x_i-\mu)^2$$
+>
+> 令导数为0，解方程
+>
+> $$
+> \begin{aligned}
+>   \frac{1}{\sigma^3}\sum\limits_{i=1}^n(x_i-\mu)^2 - \frac{n}{\sigma} &=0 \\
+>   \frac{1}{\sigma^3}\sum\limits_{i=1}^n(x_i-\mu)^2 &=\frac{n}{\sigma} \\
+>   \frac{1}{\sigma^2}\sum\limits_{i=1}^n(x_i-\mu)^2 &=n \\
+>    \sigma ^2 &= \frac{\sum\limits_{i=1}^n(x_i-\mu)^2}{n}
+> \end{aligned}
+> $$
+>
+> 在正态分布中，$\sigma>0$，我们一般把 $\sigma^2$ 做为一个参数，不用细化到 $\sigma=\sqrt{\sigma^2}$
+>
+> 因为我们前面已经算出 $\hat \mu=\bar x$，带入上面方程得
+>
+> $$\hat \sigma ^2 = \frac{\sum\limits_{i=1}^n(x_i-\bar x)^2}{n}$$
 
-#### 场景 A：拟合正态分布误差 $\to$ 导出均方误差损失（MSE / L2 Loss）
+## 极大似然估计法与机器学习损失函数的推导
 
-假设目标值 $y_i = w^T x_i + \epsilon_i$，其中噪声 $\epsilon_i \sim N(0, \sigma^2)$ 独立同分布。
-即条件概率满足 $y_i | x_i; w \sim N(w^T x_i, \sigma^2)$，概率密度为：
-$$f(y_i | x_i; w) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{(y_i - w^T x_i)^2}{2\sigma^2}\right)$$
+### 均方误差（MSE）
 
-写出对数似然函数：
-$$\ln L(w) = \sum_{i=1}^n \left[ \ln\frac{1}{\sqrt{2\pi}\sigma} - \frac{(y_i - w^T x_i)^2}{2\sigma^2} \right]$$
+现在假设有一组样本 $(y_1,y_2,\dots,y_n)$，我们简单设想了一下采样目标的分布情况但是完全不知道样本数据的情况下做了一个样本预测 $(\hat{y_1},\hat{y_2},\dots,\hat{y_n})$，则误差值为 $\delta_i=y_i-\hat{y_i}$。设 $\delta_1,\delta_2,\dots,\delta_n$ 服从正态分布，则这组误差的似然函数为：
+$$L=\prod_{i=1}^n \left[\frac{1}{\sqrt{2\pi}\sigma}e^{\dfrac{-(\delta_i-\mu)^2}{2\sigma^2} }\right]$$
+同样的，取对数似然，得
 
-要使 $\ln L(w)$ 最大，等价于使第二项减号后面的部分最小：
-$$\min_w \sum_{i=1}^n (y_i - w^T x_i)^2$$
-**结论**：**回归任务中的 MSE（均方误差）损失，本质上就是假设残差服从高斯分布时的极大似然估计！**
+$$
+\begin{aligned}
+    \ln L &=\sum_{i=1}^n\left\{ \ln \left[\frac{1}{\sqrt{2\pi}\sigma}e^{\dfrac{-(\delta_i-\mu)^2}{2\sigma^2}}\right] \right\} \\
+    & = \sum_{i=1}^n \left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(\delta_i-\mu)^2}{2\sigma^2} \right]
+\end{aligned}
+$$
 
-#### 场景 B：二分类伯努利分布 $\to$ 导出交叉熵损失（Cross-Entropy Loss）
+实际上 $\delta_i$ 也是可以被我们的预测方法改变的，刚刚我把似然函数简写成了 $L$ ，但是实际上他由3个参数控制，即
+$$L=L(\mu,\sigma,\delta)$$
+
+也就是要让 $L$ 尽可能大，我们只需要让 $(\delta_i-\mu)^2$ 尽可能的小即可（因为上式第二项是负号）。
+
+假设我们的训练目标是让模型预测似然度尽量大，用 $\operatorname{Loss}=\sum\limits_{i=1}^n(\delta_i-\mu)^2$ 做损失函数就行了，但是我们可以很简单的加一条训练目标：让模型预测结果不仅似然度大，而且还要令平均误差为0，因为一个优秀的无偏预测模型，其在训练集上的误差平均值就应该是0。我们把损失函数调整成
+$$\operatorname{Loss}=\sum_{i=1}^n\delta_i^2$$
+
+这就是均方误差损失函数。
+
+### 二元交叉熵（BCE）
 
 对于二分类问题，$y_i \in \{0, 1\}$，模型预测概率 $\hat{y}_i = P(y_i=1|x_i; w)$。
 分布可表示为伯努利形式：
