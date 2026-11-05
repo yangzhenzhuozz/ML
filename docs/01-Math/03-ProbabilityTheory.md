@@ -204,7 +204,7 @@ $$P(\text{A发生3次})=C_5^3 p^3(1-p)^2$$
 
 对于n重伯努利试验，随机变量X表示事件A发生的次数，有 $P(X=k)=C_n^k p^k(1-p)^{n-k}$，并且$C_n^k p^k(1-p)^{n-k}$ 正好是二项式 $(p+1-p)^n$ 的展开式中出现 $p^k$ 的那一项，所以叫做二项分布。
 
-随机变量X服从参数为n,p的二项分布记为**X~B(n,p)**
+随机变量X服从参数为n,p的二项分布记为 $X \sim B(n,p)$
 
 ### 泊松分布
 
@@ -240,6 +240,8 @@ $$
 $$\lim_{n \to \infty}P(X=k)=\frac{\lambda ^k}{k!} e^{-\lambda} $$
 
 这种分布就是泊松分布。当n很大，p很小的时候，系统宏观调控的时候是线性调控的，这时候调控对p的影响就很小，所以这种场景下可以用泊松分布来近似二项分布。
+
+随机变量 $X$ 服从 $np=\lambda$ 的泊松分布记为 $X \sim P(\lambda)$
 
 ### 高斯分布
 
@@ -332,6 +334,20 @@ $$f(x)=\frac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(x-\mu)^2}{2\sigma^2} }$$
 $$P(X \le x,Y \le y)=\int_{-\infty}^x \int_{-\infty}^y f(u,v)dudv$$
 
 则称 $f(x,y)$ 为二维随机变量 $(X,Y)$ 的概率密度函数
+
+### 边缘密度函数
+
+设X,Y是二维随机变量，则
+
+$$f_X(x)=\int_{-\infty}^\infty f(x,y)dy$$
+
+称为边缘概率密度函数，就是完全把y的影响消除，只考虑x的影响。
+
+### 条件概率密度
+
+$$f_{X|Y}(x|y)=\frac{f(x,y)}{f_Y(y)}$$
+
+称为在给定 $\{Y=y\}$ 的条件下，X的条件密度
 
 ## 随机变量的数字特征
 
@@ -775,3 +791,4 @@ $$\theta_{MAP} = \arg\max_\theta P(\theta | \text{数据}) = \arg\max_\theta \fr
   $\to$ 代入 MAP 求解等价于 **MLE + L2 正则化 (Weight Decay)**。
 - **拉普拉斯先验（Laplace Prior）**：假设参数权重 $w \sim \text{Laplace}(0, b)$，有 $\ln P(w) \propto -||w||_1$。
   $\to$ 代入 MAP 求解等价于 **MLE + L1 正则化 (Lasso, 促进稀疏解)**。
+  $$
