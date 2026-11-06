@@ -912,7 +912,7 @@ $$
 \end{aligned}
 $$
 
-如果我们假设模型的某个参数 $\omega$
+设当前的参数为 $(\omega_1,\omega_2,\dots,\omega_n)$
 
 ## 最大后验估计（MAP）与正则化
 
