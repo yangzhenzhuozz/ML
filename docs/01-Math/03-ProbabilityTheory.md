@@ -819,7 +819,9 @@ $$-\ln L(p)=- \sum_{i=1}^n  \sum_{k=1}^c  \left[ y_{ik} \ln \hat{y_{ik} } \right
 统计学中有频率派（classical）和贝叶斯派两种统计学派，在频率派中概率可以简单的表示为：
 $$P(A)=\frac{\text{事件A的样本点数} }{\text{样本空间的样本点数} }$$
 
-只要我们独立做试验的次数够多，频率就等于概率，比如做n重伯努利试验，最终正面向上的次数就是 $\frac{n}{2}$，并且概率模型中，事件和参数各自在自己的空间中，也就是概率模型的参数是一个定值，只要我们独立重复试验的次数趋于无穷大，最终的频率一定严格等于概率。而贝叶斯派会写成类似下面这样
+只要我们独立做试验的次数够多，频率就等于概率，比如抛n次均匀的硬币，最终正面向上的次数就是
+$$\frac{n}{2}$$
+并且概率模型中，事件和参数各自在自己的空间中，也就是概率模型的参数是一个定值，只要我们独立重复试验的次数趋于无穷大，最终的频率一定收敛于概率。而贝叶斯派会写成类似下面这样
 
 | p值 | 概率 | 理由                                |
 | --- | ---- | ----------------------------------- |
@@ -844,7 +846,7 @@ $$P(p|D)=\frac{P(D|p)P(p)}{P(D)}$$
 
 发现 $P(D)$ 好像不怎么直观，所以我们用上贝叶斯公式得全概率形式
 
-$$P(p_i|D)=\frac{P(D|p_i)P(p_i)}{\sum\limits_{j=1}^n[P(D|p_j)P(p_j)]}$$
+$$P(p_i|D)=\frac{P(D|p_i)P(p_i)}{\sum\limits_{j=1}^3[P(D|p_j)P(p_j)]}$$
 则
 
 $$
@@ -887,48 +889,30 @@ $$f(x,y)=f\_{Y|X}(y|x)f_X(x) $$
 
 得到
 
-$$f_Y(y)=\int_{-\infty}^\infty f\_{Y|X}(y|x)f_X(x) dx$$
+$$f_Y(y)=\int_{-\infty}^\infty f_{Y|X}(y|x)f_X(x) dx$$
 
 类似全概率形式下的贝叶斯公式，这个连续随机变量变量下的贝叶斯公式也有
 
 $$
-f_{X|Y}(x|y)=\frac{f_{Y|X}(y|x)f_X(x)}{\int_{-\infty}^\infty f\_{Y|X}(y|x)f_X(x) dx}
+f_{X|Y}(x|y)=\frac{f_{Y|X}(y|x)f_X(x)}{\int_{-\infty}^\infty f_{Y|X}(y|x)f_X(x) dx}
 $$
 
 我们继续用贝叶斯派的思想，把概率模型的参数也当成随机变量，得
 
-$$f(\Theta|D) = \frac{f(D|\Theta)f(\Theta)}{f(D)}$$
+$$f(\theta|D) = \frac{f(D|\theta)f(\theta)}{f(D)}=\frac{f(D|\theta)f(\theta)}{\int_{-\infty}^\infty f(D|\theta)f(\theta)d\theta}$$
 
-如果我们假设 $\Theta \sim N(\mu,\sigma^2)$，则有
+其中 $D$ 是已知样本，$\theta$ 是模型的参数。
 
-$$
-\begin{aligned}
-    &f(D|\Theta)=\prod_{i=1}^n \frac{1}{\sqrt{2\pi} \sigma}e ^{-\frac{(d_i-\mu)^2}{2\sigma^2} }\\
-    &f(\Theta)=\frac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(\theta-\mu)^2}{2\sigma^2}}
-\end{aligned}
-$$
-
-带入贝叶斯公式得
-
-$$
-f(\Theta|D) = \frac{\prod_{i=1}^n \left[\frac{1}{\sqrt{2\pi} \sigma}e ^{-\frac{(d_i-\mu)^2}{2\sigma^2} }\right] \frac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(\theta-\mu)^2}{2\sigma^2}} }{f(D)}
-$$
-
-因为 $f(D)$ 总是一个大于0的定值， $f(\Theta|D)$ 会随着分子增加而单调递增 ，所以我们在实际计算的时候只考虑分子，即
-只考虑
-$$f(D|\Theta)f(\Theta)$$
-
-同样的因为对数函数是单调递增，我们对分子取对数不影响原函数单调性和极值点，得到
+因为分子在任意 $\theta$ 取值的时候都是常数 $c \gt 0$ ，所以我们在设计损失函数的时候可以只考虑分子，和MLE类似，我们取负对数得到
 
 $$
 \begin{aligned}
-\ln [f(\Theta|D)f(\Theta)]&=\ln f(\Theta|D)+\ln f(\Theta)\\
-&=\sum_{i=1}^n \left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(d_i-\mu)^2}{2\sigma^2} \right] + \left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(\theta-\mu)^2}{2\sigma^2} \right]
+    \operatorname{Loss} &=-\ln[f(D|\theta)f(\theta)] \\
+    &=-\ln f(D|\theta)-\ln f(\theta)
 \end{aligned}
 $$
 
-不难发现，上式等于
-$$\operatorname{MLE}+\left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(\theta-\mu)^2}{2\sigma^2} \right]$$
+如果我们假设模型的某个参数 $\omega$
 
 ## 最大后验估计（MAP）与正则化
 
