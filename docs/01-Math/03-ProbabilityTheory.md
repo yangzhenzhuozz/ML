@@ -139,6 +139,15 @@ $$P(B)=\sum_{i=1}^n P(A_i)P(B|A_i)$$
 >    \end{aligned}
 > $$
 
+有时候贝叶斯公式的分母很难一下子就看出来，我们可以使用全概率公式来处理，得
+
+$$
+\begin{aligned}
+P(A_i|B) &=\frac{P(B|A_i)P(A_i)}{P(B)} \\
+&= \frac{P(B|A_i)P(A_i)}{\sum\limits_{j=1}^n[P(B|A_j)P(A_j)]}
+\end{aligned}
+$$
+
 ## 随机变量及其分布
 
 ### 随机变量
@@ -342,6 +351,10 @@ $$P(X \le x,Y \le y)=\int_{-\infty}^x \int_{-\infty}^y f(u,v)dudv$$
 $$f_X(x)=\int_{-\infty}^\infty f(x,y)dy$$
 
 称为边缘概率密度函数，就是完全把y的影响消除，只考虑x的影响。
+
+$$P(a \le X \le b)=\int_{a}^b \int_{-\infty}^\infty f(x,y)dydx$$
+
+为随机变量X落入区间 $[a,b]$ 的概率
 
 ### 条件概率密度
 
@@ -659,16 +672,20 @@ $$\lim_{n \to \infty}\left(\frac{\sum\limits_{i=1}^n X_i-n\mu}{\sqrt{n}\sigma}\r
 > 解：
 >
 > 列出似然函数
-> $$L(\mu,\sigma)=\prod_{i=1}^n \frac{1}{\sqrt{2\pi} \sigma}e ^{-\dfrac{(x_i-\mu)^2}{2\sigma^2} }$$
+>
+> $$
+> L(\mu,\sigma)=\prod_{i=1}^n \frac{1}{\sqrt{2\pi} \sigma}e ^{-\frac{(x_i-\mu)^2}{2\sigma^2} }
+> $$
+>
 > 取对数得
-> $$\ln L(\mu,\sigma)=\sum_{i=1}^n \ln [\frac{1}{\sqrt{2\pi} \sigma}e ^{-\dfrac{(x_i-\mu)^2}{2\sigma^2} }]$$
+> $$\ln L(\mu,\sigma)=\sum_{i=1}^n \ln [\frac{1}{\sqrt{2\pi} \sigma}e ^{-\frac{(x_i-\mu)^2}{2\sigma^2} }]$$
 >
 > 化简
 >
 > $$
 > \begin{aligned}
->       \ln L(\mu,\sigma) &=\sum_{i=1}^n \left\{ \ln \frac{1}{\sqrt{2\pi} \sigma}+\ln \left[e^{-\dfrac{(x_i-\mu)^2}{2\sigma^2} }\right]\right\}\\
->         &=\sum_{i=1}^n \left[ \ln \frac{1}{\sqrt{2\pi} \sigma}- \dfrac{(x_i-\mu)^2}{2\sigma^2} \right] \\
+>       \ln L(\mu,\sigma) &=\sum_{i=1}^n \left\{ \ln \frac{1}{\sqrt{2\pi} \sigma}+\ln \left[e^{-\frac{(x_i-\mu)^2}{2\sigma^2} }\right]\right\}\\
+>         &=\sum_{i=1}^n \left[ \ln \frac{1}{\sqrt{2\pi} \sigma}- \frac{(x_i-\mu)^2}{2\sigma^2} \right] \\
 >         &=-n \ln (\sqrt{2\pi}\sigma)-\frac{1}{2\sigma^2} \sum_{i=1}^n(x_i-\mu)^2 \\
 >         &=-n \ln (\sqrt{2\pi}) -n \ln \sigma -\frac{1}{2\sigma^2} \sum_{i=1}^n(x_i-\mu)^2
 > \end{aligned}
@@ -710,17 +727,17 @@ $$\lim_{n \to \infty}\left(\frac{\sum\limits_{i=1}^n X_i-n\mu}{\sqrt{n}\sigma}\r
 >
 > $$\hat \sigma ^2 = \frac{\sum\limits_{i=1}^n(x_i-\bar x)^2}{n}$$
 
-## 极大似然估计法与机器学习损失函数的推导
+## 极大似然估计法（MLE）与机器学习损失函数的推导
 
 ### 均方误差（MSE）
 
 现在假设有一组样本 $(y_1,y_2,\dots,y_n)$，我们简单设想了一下采样目标的分布情况但是完全不知道样本数据的情况下做了一个样本预测 $(\hat{y_1},\hat{y_2},\dots,\hat{y_n})$，则误差值为 $\delta_i=y_i-\hat{y_i}$。设 $\delta_1,\delta_2,\dots,\delta_n$ 服从正态分布，则这组误差的似然函数为：
-$$L=\prod_{i=1}^n \left[\frac{1}{\sqrt{2\pi}\sigma}e^{\dfrac{-(\delta_i-\mu)^2}{2\sigma^2} }\right]$$
+$$L=\prod_{i=1}^n \left[\frac{1}{\sqrt{2\pi}\sigma}e^{\frac{-(\delta_i-\mu)^2}{2\sigma^2} }\right]$$
 同样的，取对数似然，得
 
 $$
 \begin{aligned}
-    \ln L &=\sum_{i=1}^n\left\{ \ln \left[\frac{1}{\sqrt{2\pi}\sigma}e^{\dfrac{-(\delta_i-\mu)^2}{2\sigma^2}}\right] \right\} \\
+    \ln L &=\sum_{i=1}^n\left\{ \ln \left[\frac{1}{\sqrt{2\pi}\sigma}e^{\frac{-(\delta_i-\mu)^2}{2\sigma^2}}\right] \right\} \\
     & = \sum_{i=1}^n \left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(\delta_i-\mu)^2}{2\sigma^2} \right]
 \end{aligned}
 $$
@@ -802,21 +819,118 @@ $$-\ln L(p)=- \sum_{i=1}^n  \sum_{k=1}^c  \left[ y_{ik} \ln \hat{y_{ik} } \right
 统计学中有频率派（classical）和贝叶斯派两种统计学派，在频率派中概率可以简单的表示为：
 $$P(A)=\frac{\text{事件A的样本点数} }{\text{样本空间的样本点数} }$$
 
-只要我们独立做试验的次数够多，频率就等于概率，比如做n重伯努利试验，最终正面向上的次数就是 $\dfrac{n}{2}$，并且概率模型中，事件和参数各自在自己的空间中，也就是概率模型的参数是一个定值，只要我们独立重复试验的次数趋于无穷大，最终的频率一定严格等于概率。
+只要我们独立做试验的次数够多，频率就等于概率，比如做n重伯努利试验，最终正面向上的次数就是 $\frac{n}{2}$，并且概率模型中，事件和参数各自在自己的空间中，也就是概率模型的参数是一个定值，只要我们独立重复试验的次数趋于无穷大，最终的频率一定严格等于概率。而贝叶斯派会写成类似下面这样
 
-贝叶斯派会写成类似下面这样
-$P(p=0.1)=0.02$
-$P(p=0.2)=0.02$
-$P(p=0.3)=0.02$
-$P(p=0.4)=0.02$
-$P(p=0.5)=0.9$ → 我非常相信p=0.5，所以给他的的概率最高
+| p值 | 概率 | 理由                                |
+| --- | ---- | ----------------------------------- |
+| 0.2 | 0.05 | 作弊硬币硬币抛出8成反面的概率比较低 |
+| 0.5 | 0.9  | 我非常相信这个硬币是公平的          |
+| 0.8 | 0.05 | 作弊硬币硬币抛出8成正面的概率比较低 |
+
+假设现在我们抛10次硬币，样本D=有8次正面。用二项分布公式计算不同p值的似然度
+
+$$L=C_{10}^8 p^8(1-p)^2$$
+
+得到如下结果：
+
+| p值 | 似然度 $P(D \vert p)$ | 先验概率 |
+| --- | --------------------- | -------- |
+| 0.2 | 0.000073728           | 0.05     |
+| 0.5 | 0.0439453125          | 0.9      |
+| 0.8 | 0.301989888           | 0.05     |
 
 然后上贝叶斯公式
 $$P(p|D)=\frac{P(D|p)P(p)}{P(D)}$$
 
-## 接着我们抛硬币，连续抛10次，8正2反，这时候是怎么更新的呢
+发现 $P(D)$ 好像不怎么直观，所以我们用上贝叶斯公式得全概率形式
 
-### 4. 最大后验估计（MAP）与正则化
+$$P(p_i|D)=\frac{P(D|p_i)P(p_i)}{\sum\limits_{j=1}^n[P(D|p_j)P(p_j)]}$$
+则
+
+$$
+\begin{aligned}
+P(D) &= 0.000073728 \times 0.05 + 0.0439453125 \times 0.9 + 0.301989888 \times 0.05 \\
+ &= 0.0546539621
+\end{aligned}
+$$
+
+得到三个P值的后验概率为
+
+| p值 | 似然度 $P(D \vert p)$ | 先验概率 | 后验概率                                                    |
+| --- | --------------------- | -------- | ----------------------------------------------------------- |
+| 0.2 | 0.000073728           | 0.05     | $$\frac{0.000073728\times0.05}{0.0546539621}=0.0000674498$$ |
+| 0.5 | 0.0439453125          | 0.9      | $$\frac{0.0439453125\times0.9}{0.0546539621}=0.7236580802$$ |
+| 0.8 | 0.301989888           | 0.05     | $$\frac{0.301989888\times0.05}{0.0546539621}=0.27627447$$   |
+
+可以发现，通过对样本的观察，我们调整了后验概率，P(p=0.2) 的后验概率从5%下降到了0.0067%。并且因为我们极强的先验概率信念，导致 p=0.5 的后验概率还是很大。
+
+我们把离散变量变成连续变量，使用二维随机变量的条件概率密度公式
+
+$$
+f_{X|Y}(x|y)=\frac{f(x,y)}{f_Y(y)} \\
+f_{Y|X}(y|x)=\frac{f(x,y)}{f_X(x)}
+$$
+
+根据上述两个公式得到
+
+$$f(x,y)=f_{X|Y}(x|y)f_Y(y)=f_{Y|X}(y|x)f_X(x)$$
+
+则有
+
+$$f_{X|Y}(x|y)=\frac{f_{Y|X}(y|x)f_X(x)}{f_Y(y)}$$
+
+这就是连续随机变量的贝叶斯公式。
+因为
+
+$$f_Y(y)=\int_{-\infty}^\infty f(x,y) dx $$
+$$f(x,y)=f\_{Y|X}(y|x)f_X(x) $$
+
+得到
+
+$$f_Y(y)=\int_{-\infty}^\infty f\_{Y|X}(y|x)f_X(x) dx$$
+
+类似全概率形式下的贝叶斯公式，这个连续随机变量变量下的贝叶斯公式也有
+
+$$
+f_{X|Y}(x|y)=\frac{f_{Y|X}(y|x)f_X(x)}{\int_{-\infty}^\infty f\_{Y|X}(y|x)f_X(x) dx}
+$$
+
+我们继续用贝叶斯派的思想，把概率模型的参数也当成随机变量，得
+
+$$f(\Theta|D) = \frac{f(D|\Theta)f(\Theta)}{f(D)}$$
+
+如果我们假设 $\Theta \sim N(\mu,\sigma^2)$，则有
+
+$$
+\begin{aligned}
+    &f(D|\Theta)=\prod_{i=1}^n \frac{1}{\sqrt{2\pi} \sigma}e ^{-\frac{(d_i-\mu)^2}{2\sigma^2} }\\
+    &f(\Theta)=\frac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(\theta-\mu)^2}{2\sigma^2}}
+\end{aligned}
+$$
+
+带入贝叶斯公式得
+
+$$
+f(\Theta|D) = \frac{\prod_{i=1}^n \left[\frac{1}{\sqrt{2\pi} \sigma}e ^{-\frac{(d_i-\mu)^2}{2\sigma^2} }\right] \frac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(\theta-\mu)^2}{2\sigma^2}} }{f(D)}
+$$
+
+因为 $f(D)$ 总是一个大于0的定值， $f(\Theta|D)$ 会随着分子增加而单调递增 ，所以我们在实际计算的时候只考虑分子，即
+只考虑
+$$f(D|\Theta)f(\Theta)$$
+
+同样的因为对数函数是单调递增，我们对分子取对数不影响原函数单调性和极值点，得到
+
+$$
+\begin{aligned}
+\ln [f(\Theta|D)f(\Theta)]&=\ln f(\Theta|D)+\ln f(\Theta)\\
+&=\sum_{i=1}^n \left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(d_i-\mu)^2}{2\sigma^2} \right] + \left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(\theta-\mu)^2}{2\sigma^2} \right]
+\end{aligned}
+$$
+
+不难发现，上式等于
+$$\operatorname{MLE}+\left[ \ln \frac{1}{\sqrt{2\pi}\sigma}+\frac{-(\theta-\mu)^2}{2\sigma^2} \right]$$
+
+## 最大后验估计（MAP）与正则化
 
 似然估计 MLE 只考虑数据 $P(\text{数据}|\theta)$，而 **MAP（Maximum A Posteriori）** 引入了参数的**先验概率 $P(\theta)$**：
 $$\theta_{MAP} = \arg\max_\theta P(\theta | \text{数据}) = \arg\max_\theta \frac{P(\text{数据} | \theta) P(\theta)}{P(\text{数据})} = \arg\max_\theta \left[ \ln P(\text{数据} | \theta) + \ln P(\theta) \right]$$
