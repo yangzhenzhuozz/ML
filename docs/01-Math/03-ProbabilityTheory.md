@@ -903,7 +903,7 @@ $$f(\theta|D) = \frac{f(D|\theta)f(\theta)}{f(D)}=\frac{f(D|\theta)f(\theta)}{\i
 
 其中 $D$ 是已知样本，$\theta$ 是模型的参数。
 
-因为分子在任意 $\theta$ 取值的时候都是常数 $c \gt 0$ ，所以我们在设计损失函数的时候可以只考虑分子，和MLE类似，我们取负对数得到
+分母 $f(D)$ 是在把参数 $\theta$ 所有可能值考虑进去的概率，所以是一个大于0的常数（可以参考前面说的抛硬币例子，并且从数学的角度考虑，对 $\theta$ 积分之后，会消掉 $\theta$），所以我们在设计损失函数的时候可以只考虑分子，和MLE类似，我们取负对数得到
 
 $$
 \begin{aligned}
@@ -912,15 +912,43 @@ $$
 \end{aligned}
 $$
 
-设当前的参数为 $(\omega_1,\omega_2,\dots,\omega_n)$
+设当前的参数为 $\theta=(\omega_1,\omega_2,\dots,\omega_n)$，$-\ln f(D|\theta)$ 就是似然度，我们已经很熟悉了，而 $f(\theta)$ 则是先验概率，有
 
-## 最大后验估计（MAP）与正则化
+$$f(\theta)=\prod_{i=1}^n p(\omega_i)$$
 
-似然估计 MLE 只考虑数据 $P(\text{数据}|\theta)$，而 **MAP（Maximum A Posteriori）** 引入了参数的**先验概率 $P(\theta)$**：
-$$\theta_{MAP} = \arg\max_\theta P(\theta | \text{数据}) = \arg\max_\theta \frac{P(\text{数据} | \theta) P(\theta)}{P(\text{数据})} = \arg\max_\theta \left[ \ln P(\text{数据} | \theta) + \ln P(\theta) \right]$$
+取了对数之后有
 
-- **高斯先验（Gaussian Prior）**：假设参数权重 $w \sim N(0, \sigma_w^2)$，有 $\ln P(w) \propto -||w||_2^2$。
-  $\to$ 代入 MAP 求解等价于 **MLE + L2 正则化 (Weight Decay)**。
-- **拉普拉斯先验（Laplace Prior）**：假设参数权重 $w \sim \text{Laplace}(0, b)$，有 $\ln P(w) \propto -||w||_1$。
-  $\to$ 代入 MAP 求解等价于 **MLE + L1 正则化 (Lasso, 促进稀疏解)**。
-  $$
+$$\ln f(\theta)=\sum_{i=1}^n \ln p(\omega_i)$$
+
+如果我们假设每个 $\omega$ 都有 $\omega_i \sim N(0,\sigma_i^2)$ （就是每个参数的平均值都为0，但是各自方差不一样），则有
+
+$$
+\begin{aligned}
+    \ln f(\theta) &=\sum_{i=1}^n \ln\left[\frac{1}{\sqrt{2\pi}\sigma_i}e^{-\frac{\omega_i^2}{2\sigma_i^2}}\right] \\
+                  &=\sum_{i=1}^n \left\{ \ln \frac{1}{\sqrt{2\pi}}-\ln \sigma_i -\frac{\omega_i^2}{2\sigma_i^2}  \right\}
+\end{aligned}
+$$
+
+因为 $\sigma_i$ 是我们预设的参数属性，和 $\omega_i$ 无关，所以我们重点关注
+
+$$
+\sum_{i=1}^n -\frac{\omega_i^2}{2\sigma_i^2}
+$$
+
+这一部分，并且如果我们假设所有的 $\sigma_i^2$ 一样，那么就变成了
+
+$$
+-\frac{1}{2\sigma^2} \sum_{i=1}^n \omega_i^2
+$$
+
+令 $\lambda=\frac{1}{2\sigma_i^2}$，得
+
+$$
+\ln f(\theta) \propto -\lambda \sum_{i=1}^n \omega_i^2
+$$
+
+带入 Loss函数得，L2正则化的MAP为
+
+$$\operatorname{Loss}=\operatorname{MLE}+\lambda \sum_{i=1}^n \omega_i^2$$
+
+其中 $\operatorname{MLE}$ 表示负对数似然项 $-\ln f(D|\theta)$，$\lambda>0$ 是正则化系数。
