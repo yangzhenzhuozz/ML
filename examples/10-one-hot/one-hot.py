@@ -5,8 +5,6 @@ import time
 import torch
 from torch import Tensor
 from torch.nn import functional as F
-from math import sin
-
 import matplotlib.pyplot as plt
 
 torch.manual_seed(42)  # 固定随机种子以便复现
@@ -31,7 +29,7 @@ class RNN:
 
         def init_layer(shape: Sequence[int]):
             # 参数直接建在目标设备上，避免后面反复 .to(device)
-            return torch.randn(shape, device=self.device).requires_grad_()
+            return (torch.randn(shape, device=self.device) * 0.1).requires_grad_()
 
         self.out_layer = init_layer(
             (encoding_space, width + 1)
@@ -154,38 +152,41 @@ class RNN:
                 layer -= learning_rate * layer.grad
                 layer.grad = None  # 清空梯度，避免下轮训练被累加
 
-        return total_loss
+        return avg_loss
 
 
 def main():
-    rnn = RNN(depth=5, width=10)
+    rnn = RNN(depth=2, width=128)
 
     print(f"训练设备: {rnn.device}")
 
-    with open("examples/10-one-hot/data.txt") as file:
+    with open("data.txt") as file:
         lines = [line.strip() for line in file]
 
     loss_list = []
-    for epoch in range(20):
+    for epoch in range(3):
         start = time.perf_counter()
         epoch_loss: list[float] = []
-        for line in lines:
+        for idx, line in enumerate(lines):
             loss = rnn.train(
                 line[:-1],
                 line[1:],
                 learning_rate=0.01,
             )
             epoch_loss.append(loss.item())
-        loss_list.append(sum(epoch_loss) / len(epoch_loss))
-        print(f"训练完成{epoch}轮 耗时 {time.perf_counter() - start:.2f}s")
+            if (idx + 1) % 100 == 0:
+                print(f"训练了{(idx+1)}句话")
+        loss_list.append(epoch_loss)
+        print(f"训练完成{epoch+1}轮 耗时 {time.perf_counter() - start:.2f}s")
 
-    plt.figure()
-    plt.plot([x * 0.5 for x in range(len(loss_list))], loss_list, label="损失值")
-    plt.title("Loss示例")  # 标题
-    plt.xlabel("X 轴 (时间)")  # X轴标签
-    plt.ylabel("Y 轴 (损失)")  # Y轴标签
-    plt.legend()  # 显示图例
-    plt.grid(True)  # 显示网格线
+    for idx, loss in enumerate(loss_list):
+        plt.figure()
+        plt.plot([(i + 1) for i in range(len(loss))], loss, label=f"第{idx}轮Loss")
+        plt.title("Loss示例")  # 标题
+        plt.xlabel("step")  # X轴标签
+        plt.ylabel("平均交叉熵损失")  # Y轴标签
+        plt.legend()  # 显示图例
+        plt.grid(True)  # 显示网格线
 
     plt.show()
 
