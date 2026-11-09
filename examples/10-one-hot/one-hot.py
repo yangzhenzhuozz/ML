@@ -1,3 +1,5 @@
+import readline  # 导入此模块会自动接管 input() 并启用历史记录
+
 from typing import Sequence, cast
 
 import time
@@ -16,11 +18,10 @@ encoding_space = 27
 
 
 class RNN:
-    def __init__(self, depth=2, width=2, device: torch.device | None = None):
-        # 有 CUDA 就用 GPU，否则回退到 CPU
-        # self.device = device or torch.device(
-        #     "cuda" if torch.cuda.is_available() else "cpu"
-        # )
+    def __init__(self, depth=2, width=2):
+
+        # 使用cpu训练，因为这份代码还没有针对批量训练做调整，用GPU会很慢
+
         self.device = "cpu"
 
         self.depth = depth
@@ -31,6 +32,7 @@ class RNN:
             # 参数直接建在目标设备上，避免后面反复 .to(device)
             return (torch.randn(shape, device=self.device) * 0.1).requires_grad_()
 
+        # +1是让下一层的偏置bias生效
         self.out_layer = init_layer(
             (encoding_space, width + 1)
         )  # 输出层是一个encoding_space行向量
@@ -38,6 +40,7 @@ class RNN:
         # 每个矩阵的行分别是神经元的权重+偏置
         # 第一行个隐藏层因为只有一个输入向量，所以是width+8（encoding_space个权重(one-hot编码)+一个偏置+自己的反馈）
         # 后面隐藏层每行需要前一层的所有输入权重+一个偏置+自己反馈
+        # +1是让下一层的偏置bias生效
         self.hidden_layers: list[Tensor] = [
             init_layer((width, encoding_space + 1 + width)),
             *[init_layer((width, width + 1 + width)) for _ in range(depth - 1)],
@@ -175,12 +178,13 @@ def main():
             )
             epoch_loss.append(loss.item())
             if (idx + 1) % 100 == 0:
-                print(f"训练了{(idx+1)}句话")
+                print(f"训练了{(idx+1)}行文本")
         loss_list.append(epoch_loss)
         print(f"训练完成{epoch+1}轮 耗时 {time.perf_counter() - start:.2f}s")
 
+    plt.ion()
+    plt.figure()
     for idx, loss in enumerate(loss_list):
-        plt.figure()
         plt.plot([(i + 1) for i in range(len(loss))], loss, label=f"第{idx}轮Loss")
         plt.title("Loss示例")  # 标题
         plt.xlabel("step")  # X轴标签
@@ -188,14 +192,16 @@ def main():
         plt.legend()  # 显示图例
         plt.grid(True)  # 显示网格线
 
-    plt.show()
+    plt.show(block=False)
 
     while True:
         text = input()
-        ret = rnn.forward(text)
-        ch, p = rnn.decoding(ret)[0]
-        print(f'"{text}"的下一个字符是:{ch} (概率 {p:.4f})')
-        text += ch
+        for _ in range(20):  # 往后输出20个字符
+            ret = rnn.forward(text)
+            ch, p = rnn.decoding(ret)[0]
+            print(f'"{text}"的下一个字符是:{ch} (概率 {p:.4f})')
+            text += ch
+        plt.pause(0.1)
 
 
 if __name__ == "__main__":
