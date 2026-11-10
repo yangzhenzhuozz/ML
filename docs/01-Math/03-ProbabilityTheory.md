@@ -547,18 +547,58 @@ $$\lim_{n \to \infty}P(|\frac{1}{n}\sum_{i=1}^n X_i-\frac{1}{n}\sum_{i=1}^n E(X_
 
 > 设
 > $$Y_n=\frac{X_1+X_2+X_3+\cdots+X_n}{n}$$
-> 根据期望、方差的关系运算有
-> $$E(Y_n)=E(\frac{1}{n}\sum_{i=1}^n X_i)=\frac{1}{n}E(\sum_{i=1}^n X_i)$$
-> $$D(Y_n)=D(\frac{1}{n}\sum_{i=1}^n X_i)=\frac{1}{n^2}D(\sum_{i=1}^n X_i) \le \frac{c}{n^2}$$
-> 根据切比雪夫不等式有
-> $$P(|Y_n-E(Y_n)|>\epsilon) \le \frac{D(Y_n)}{\epsilon^2} \le \frac{nc}{n^2}$$
+> tips: 这里我曾经吃过亏，大数定理研究是的平均值，而我当时是设 $Y_n=X_1+X_2+X_3+\cdots+X_n$，变成研究随机变量的和，一直证不出来。
+>
+> 根据切比雪夫不等式
+>
+> $$
+> P(|X-\mu|\ge \epsilon) \le \frac{D(X)}{\epsilon^2}
+> $$
+>
+> 因为是两两不相关的随机变量，所以有
+>
+> $$
+> \begin{aligned}
+>   Y_n &=  \frac{1}{n}\sum_{i=1}^n X_i \\
+>  \mu &=E(\frac{1}{n}\sum_{i=1}^n X_i)=\frac{1}{n}\sum_{i=1}^n E(X_i) \\
+>  D(Y_n) &=D(\frac{1}{n}\sum_{i=1}^n X_i)=\frac{1}{n^2}\sum_{i=1}^n D(X_i)
+> \end{aligned}
+> $$
+>
+> 设 $D(X_i) \le c\lt \infty$ （无限序列不一定能取到max，比如一个无限逼近1的数列，上确界是1，但是永远不等于1）
+>
+> 根据切比雪夫不等式
+>
+> $$
+> P(|Y_n-\mu|\ge \epsilon) \le \frac{D(Y_n)}{\epsilon^2}
+> $$
+>
+> 我们把 $Y_n$ 带入切比雪夫不等式中有
+>
+> $$
+> P(|\frac{1}{n}\sum_{i=1}^n X_i- \frac{1}{n}\sum_{i=1}^n E(X_i)|\ge \epsilon) \le \frac{\sum\limits_{i=1}^n D(X_i)}{n^2\epsilon^2} \le \frac{nc}{n^2\epsilon^2}
+> $$
+>
 > 因为
-> $$\lim_{n \to \infty}\frac{c}{n}=0$$
-> 则有
-> $$\lim_{n \to \infty}P(|Y_n-E(Y_n)| \ge \epsilon)=0$$
-> 那么对立事件的概率为1，即
-> $$\lim_{n \to \infty}P(|Y_n-E(Y_n)| \lt \epsilon)=1$$
-> 把 $Y_n=\frac{X_1+X_2+X_3+\cdots+X_n}{n}$ 带入上式即证毕
+>
+> $$
+> \lim_{n \to \infty} \frac{nc}{n^2\epsilon^2}=\lim_{n \to \infty} \frac{c}{n\epsilon^2}=0
+> $$
+>
+> 因为 $0 \le p \le 1$，由夹逼定理得
+>
+> $$
+> \lim_{n \to \infty}P(|\frac{1}{n}\sum_{i=1}^n X_i- \frac{1}{n}\sum_{i=1}^n E(X_i)|\ge \epsilon) = 0
+> $$
+>
+> 我们取反事件则有
+>
+> $$
+> \lim_{n \to \infty}P(|\frac{1}{n}\sum_{i=1}^n X_i- \frac{1}{n}\sum_{i=1}^n E(X_i)| \lt \epsilon) = 1
+> $$
+>
+> 绝对值中第一项是均值，第二项是期望。
+> 证毕
 
 切比雪夫大数定理说明只要随机变量方差有上界，当变量足够多时，期望依概率收敛于算术平均值。只要随机变量之间两两不相关就能使用切比雪夫大数定理（如果有任意两个随机变量相关，那么 $D(X+Y)=D(X)+D(Y)+2E(X-E(X))$ 中的 $2\operatorname{cov}(X,Y)$ 就消不掉）
 
