@@ -208,6 +208,54 @@ $f''(α)=-A\cos α-B\sin α$，我们把方向 $(A,B)$ 带入得到 $f''(α)=-A^
 
 梯度可以记作 $\mathrm{grad} f(x_0,y_0)=f_x(x_0,y_0)i+f_y(x_0,y_0)j$ ，同时这个向量的模长就是函数在该方向的变化率。
 
+### 拉格朗日乘数法
+
+如果我们要计算函数 $f(x,y)$ 在约束 $g(x,y)=0$ 约束下的极值，应该用什么方法呢？
+
+这里我先说一些前置知识，约束条件分为两种：
+
+1. 线约束：$g(x,y)=0$ 表示曲面 $z=g(x,y)$ 与平面 $z=0$ 相交的曲线，这是空间曲线的一般式定义
+2. 区域约束：使用不等式进行约束
+
+现在假设我们在 $z=f(x,y)$ 上面，$g(x,y)=0$ 的约束线上面某一点尝试沿着约束线移动，如果 $\operatorname{grad} f$ 垂直于 $g(x,y)=0$ 的切线，因为 $g=0$ 的切线垂直于 $f$ 的梯度，所以切线是平行于等高线的，那么我们不管往前还是往后，必然会导致 $z$ 值有变化。所以该点就是 $f(x,y)$ 的一个极值点。
+
+也可以说是 $f$ 的梯度向量和约束曲线 $g=0$ 的法向量 $\vec{n}$ 平行时，该点是一个极值点，尤其是 $g(x,y)=0$ 在 $XoY$ 平面的法向量和 $g(x,y)$ 的梯度向量平行（需要空间几何的知识推导）
+
+$$
+\begin{aligned}
+    \operatorname{grad} f &= \overrightarrow{(\frac{\partial f}{x},\frac{\partial f}{y})} \\
+    \vec{n} &= \overrightarrow{(\frac{\partial g}{x},\frac{\partial g}{y})}
+\end{aligned}
+$$
+
+根据假设，要求 $\operatorname{grad} f \parallel \vec{n}$，则有
+
+$$
+\overrightarrow{(\frac{\partial f}{x},\frac{\partial f}{y})}=\lambda \overrightarrow{(\frac{\partial g}{x},\frac{\partial g}{y})}
+$$
+
+其中 $\lambda \ne 0$，得到
+
+$$
+\begin{cases}
+\frac{\partial f}{\partial x} - \lambda \frac{\partial g}{\partial x} &= 0 \\
+\frac{\partial f}{\partial y} - \lambda \frac{\partial g}{\partial y} &= 0 \\
+g(x,y) &= 0
+\end{cases}
+$$
+
+所以数学家拉格朗日打包了一个拉格朗日函数
+
+$$
+\mathcal{L}=f(x,y) + \lambda g(x,y)
+$$
+
+当把 $\mathcal{L}$ 分别对 $x$、$y$、$\lambda$ 求偏导数并全部令其为 0 时：
+
+1. 对 $x$ 求偏导：$\frac{\partial \mathcal{L}}{\partial x} = \frac{\partial f}{\partial x} - \lambda \frac{\partial g}{\partial x} = 0$ （对应第一个梯度分量方程）
+2. 对 $y$ 求偏导：$\frac{\mathcal{L}}{\partial y} = \frac{\partial f}{\partial y} - \lambda \frac{\partial g}{\partial y} = 0$ （对应第二个梯度分量方程）
+3. 对 $\lambda$ 求偏导：$\frac{\partial \mathcal{L}}{\partial \lambda} = -g(x,y) = 0$ （约束条件本身）
+
 ## 多元复合函数的导数
 
 ### 一元函数与多元函数复合的情况
@@ -275,7 +323,6 @@ $\dfrac{\partial z}{\partial y}=\dfrac{\partial z}{\partial u}\dfrac{\partial u}
 $$\dfrac{\partial z}{\partial s}=\dfrac{\partial z}{\partial a}\dfrac{\partial a}{\partial s}+\dfrac{\partial z}{\partial b}\dfrac{\partial b}{\partial s}+\dfrac{\partial z}{\partial u}\dfrac{\partial u}{\partial s}$$
 
 **需要注意**：换元后，变量体系发生了改变。原来的 $u$ 是以 $(x,y)$ 为自变量的函数；换元后，将复合关系吸收到 $u(s,t)$ 中，此时 $s,t$ 成为新的底层自变量，$a,b,u$ 都是由 $(s,t)$ 直接确定的函数。因此，在当前变量体系下，应分别考察 $a,b,u$ 随 $s,t$ 的变化。此时，$u$ 由 $s,t$ 直接驱动，而不是由 $a,b$ 的函数值驱动。
-
 
 ## 小记
 
