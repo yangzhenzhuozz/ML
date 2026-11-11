@@ -51,14 +51,12 @@ $$
 
 总结：信息量函数是表示以n为基底时，某个随机变量所携带的信息量。信息熵则是信息量函数的期望，表示这个随机变量的平均信息量。
 
-后面为了方便，公式中会省略底数 a。
-
 ## 交叉熵
 
 设离散随机变量X有一个真实概率分布P和一个假设概率分布Q，则称
 
 $$
-H(P,Q)=-\sum_{i=1}^n P(x_i) \log Q(x_i)
+H(P,Q)=-\sum_{i=1}^n P(x_i) \log_a Q(x_i)
 $$
 
 为交叉熵。交叉熵表示我们使用一个基于分布Q的最优编码方案去编码服从真实分布P的平均信息量时得到的结果。交叉熵有一个有趣的性质
@@ -71,33 +69,77 @@ $$
 
 **证**
 
-> $$
-> \begin{aligned}
->   H(P,Q) - H(P) &= -\sum_{i=1}^n p_i \log q_i- (-\sum_{i=n}^n p_i \log p_i) \\
->                 &= \sum_{i=1}^n p_i \log p_i - \sum_{i=n}^n p_i \log q_i \\
->                 &= \sum_{i=1}^n (p_i \log p_i - p_i \log q_i) \\
->                 &= \sum_{i=1}^n [p_i (\log p_i-\log q_i)] \\
->                 &= \sum_{i=1}^n p_i (\log \frac{p_i}{q_i})
-> \end{aligned}
-> $$
->
-> 而 $p_i$ 还有一个约束条件就是
+> 在约束 $\sum_{i=1}^n q_i=1$ 下最小化交叉熵
 >
 > $$
-> \sum_{i=1}^n pi=1
+> H(P,Q)=-\sum_{i=1}^n p_i\log_a q_i,\qquad a>1
 > $$
 >
-> 即
+> 构造拉格朗日函数
 >
 > $$
-> \sum_{i=1}^n pi -1=0
+> \mathcal L
+> =
+> -\sum_{i=1}^n p_i\log_a q_i
+> +\lambda\left(\sum_{i=1}^n q_i-1\right)
 > $$
 >
-> 所以我们构造一个拉格朗日函数
+> 对 $q_i$ 求偏导：
 >
 > $$
-> \mathcal{L}=\sum_{i=1}^n p_i (\log \frac{p_i}{q_i})+\lambda (\sum_{i=1}^n pi -1)
+> \frac{\partial \mathcal L}{\partial q_i}
+> =
+> -\frac{p_i}{q_i\ln a}+\lambda
 > $$
 >
-> 对每个 $q_i$ 和 $\lambda$ 求偏导，得到
-> 
+> 令其为零，得
+>
+> $$
+> q_i=\frac{p_i}{\lambda\ln a}
+> $$
+>
+> 由 $\sum_i q_i=1$ 和 $\sum_i p_i=1$，得
+>
+> $$
+> 1=\sum_i q_i
+> =
+> \frac{1}{\lambda\ln a},
+> $$
+>
+> 所以
+>
+> $$
+> \lambda\ln a=1,
+> $$
+>
+> 从而
+>
+> $$
+> q_i=p_i
+> $$
+>
+> 又因为
+>
+> $$
+> \frac{\partial^2 \mathcal L}{\partial q_i^2}
+> =
+> \frac{p_i}{q_i^2\ln a}>0,
+> $$
+>
+> 所以 $Q=P$ 是唯一全局最小点。于是
+>
+> $$
+> \min_Q H(P,Q)=H(P,P)=H(P)
+> $$
+>
+> 因此对任意 $Q$，
+>
+> $$
+> H(P,Q)\ge H(P)
+> $$
+>
+> 等号成立当且仅当
+>
+> $$
+> Q=P
+> $$
