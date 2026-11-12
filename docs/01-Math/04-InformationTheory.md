@@ -78,18 +78,13 @@ $$
 > 构造拉格朗日函数
 >
 > $$
-> \mathcal L
-> =
-> -\sum_{i=1}^n p_i\log_a q_i
-> +\lambda\left(\sum_{i=1}^n q_i-1\right)
+> \mathcal L = -\sum_{i=1}^n p_i\log_a q_i+\lambda\left(\sum_{i=1}^n q_i-1\right)
 > $$
 >
 > 对 $q_i$ 求偏导：
 >
 > $$
-> \frac{\partial \mathcal L}{\partial q_i}
-> =
-> -\frac{p_i}{q_i\ln a}+\lambda
+> \frac{\partial \mathcal L}{\partial q_i} = -\frac{p_i}{q_i\ln a}+\lambda
 > $$
 >
 > 令其为零，得
@@ -101,15 +96,13 @@ $$
 > 由 $\sum_i q_i=1$ 和 $\sum_i p_i=1$，得
 >
 > $$
-> 1=\sum_i q_i
-> =
-> \frac{1}{\lambda\ln a},
+> 1=\sum_i q_i = \frac{1}{\lambda\ln a}
 > $$
 >
 > 所以
 >
 > $$
-> \lambda\ln a=1,
+> \lambda\ln a=1
 > $$
 >
 > 从而
@@ -118,15 +111,7 @@ $$
 > q_i=p_i
 > $$
 >
-> 又因为
->
-> $$
-> \frac{\partial^2 \mathcal L}{\partial q_i^2}
-> =
-> \frac{p_i}{q_i^2\ln a}>0,
-> $$
->
-> 所以 $Q=P$ 是唯一全局最小点。于是
+> $Q=P$ 是唯一全局最小点（这里的证明需要用到多元函数的泰勒公式、多元函数极大极小值、函数凸性，比较麻烦，所以直接给了结论）。于是
 >
 > $$
 > \min_Q H(P,Q)=H(P,P)=H(P)
@@ -143,3 +128,54 @@ $$
 > $$
 > Q=P
 > $$
+
+到这里有没有发现这个公式和我们在概率论通过似然估计出来的交叉熵完全对上了，我们通过极大似然估计得到的交叉熵公式为
+
+$$-\ln L(p)=- \sum_{i=1}^n  \sum_{k=1}^c  \left[ y_{ik} \ln \hat{y_{ik} } \right]$$
+
+公式中 $\hat{y_{ik}}$ 是我们假设的概率，$y_{ik}$ 是真实数据的类别的0-1标签，并且因为c个类别中，只允许一个类别为1，其他类别为0，所以真实数据 $y_{ik}$ 本质就是一个概率分布表：1 表示该类别的真实概率为 100%，0 表示概率为 0。内层求和跟信息论的交叉熵完全一致
+
+$$
+H(y_{ik},\hat{y_{ik}})=-\sum_{k=1}^c  \left[ y_{ik} \ln \hat{y_{ik} } \right]
+$$
+
+就表示了第 $i$ 组样本的交叉熵，而
+
+$$-\ln L(p)=- \sum_{i=1}^n  \sum_{k=1}^c  \left[ y_{ik} \ln \hat{y_{ik} } \right]$$
+
+表示 $n$ 组样本的交叉熵总和
+
+## KL散度
+
+因为真实分布的信息熵 $H(P)$ 是一个常数，所以我们可以用 $H(P,Q)-H(P)$ 来评估我们的预测分布 $Q$ 和真实分布 $P$ 的差异，这个评估指标就是KL散度
+
+$$
+D_{KL}(P \parallel Q)=H(P,Q)-H(P)
+$$
+
+由交叉熵的定义可以知道，KL散度是一个大于0的值，越低就表示我们的预设越接近真实分布。需要注意的是KL散度是不对称的，即
+
+$$
+D_{KL}(P \parallel Q) \ne D_{KL}(Q \parallel P)
+$$
+
+所以KL散度不能作为评估的绝对标准，只能做相对标准。不对称的证明如下：
+
+**证：**
+
+> $$
+> \begin{aligned}
+>   \Delta =& D_{KL}(P \parallel Q) - D_{KL}(Q \parallel P) \\
+>          =& H(P,Q)-H(P)-H(Q,P)+H(Q) \\
+>          =& \left\{-\left[\sum_{i=1}^n (p_i \log_a q_i)-\sum_{i=1}^n (p_i \log_a p_i)\right]\right\}-\left\{-\left[\sum_{i=1}^n (q_i \log_a p_i)-\sum_{i=1}^n (q_i \log_a q_i)\right]\right\} \\
+>          =& \sum_{i=1}^n \left[ (p_i+q_i)(\log_a p_i-\log_a q_i) \right]
+> \end{aligned}
+> $$
+>
+> 利用对数函数的单调递增性有
+>
+> 1. $p_i=q_i$ 时，$\Delta=0$
+> 2. $p_i \lt q_i$ 时，有 $p_i+q_i \gt 0,\log_a p_i - \log_a q_i \lt 0$，$\Delta \lt 0$
+> 3. $p_i \gt q_i$ 时，有 $p_i+q_i \gt 0,\log_a p_i - \log_a q_i \gt 0$，$\Delta \gt 0$
+>
+> 所以两者是不对称的
