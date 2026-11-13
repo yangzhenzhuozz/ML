@@ -180,6 +180,28 @@ class RNN:
         return avg_loss
 
 
+def probs_to_markdown(
+    probs: list[float], as_percent: bool = True, sort_by_prob: bool = False
+) -> str:
+    """将长度为 27 的概率列表转换为竖向 Markdown 表格字符串"""
+    if len(probs) != 27:
+        raise ValueError(f"概率列表长度必须为 27，当前长度为 {len(probs)}")
+
+    headers = [chr(i + ord("a")) if i != 26 else "space" for i in range(27)]
+    pairs = list(zip(headers, probs))
+
+    # 如果开启排序，则按概率值（元组的第 2 个元素 x[1]）降序排列
+    if sort_by_prob:
+        pairs.sort(key=lambda x: x[1], reverse=True)
+
+    lines = ["| 字符 | 概率 |", "| :--- | ---: |"]
+    for char, p in pairs:
+        val = f"{p * 100:.2f}%" if as_percent else f"{p:.4f}"
+        lines.append(f"| {char} | {val} |")
+
+    return "\n".join(lines)
+
+
 def main():
     rnn = RNN(depth=5, width=5)
 
@@ -200,7 +222,7 @@ def main():
         y_str = process_and_chunk(file_str[1:], 20)
 
     loss_list = []
-    for epoch in range(1000):
+    for epoch in range(500):
         start = time.perf_counter()
         epoch_loss = rnn.train(x_str, y_str)
         loss_list.append(epoch_loss.item())
@@ -219,10 +241,11 @@ def main():
 
     while True:
         text = input()
-        for _ in range(20):  # 往后输出20个字符
+        for _ in range(1):  # 往后输出20个字符
             ret = rnn.forward([text])
+            print(probs_to_markdown(ret.detach().flatten().tolist(), sort_by_prob=True))
             ch, p = rnn.decoding(ret)[0]
-            print(f'"{text}"的下一个字符是:{ch} (概率 {p:.4f})')
+            print(f'"{text}"的下一个字符：{ch}')
             text += ch
         plt.pause(0.1)
 
