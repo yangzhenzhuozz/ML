@@ -643,8 +643,6 @@ $$\lim_{n \to \infty}P(|\frac{1}{n}\sum_{i=1}^n X_i-p|<\epsilon)=1$$
 
 在n重伯努利试验中，$E(X_i)=p$，带入切比雪夫大数定理中即可得到
 
----
-
 ### 中心极限定理（Central Limit Theorem, CLT）
 
 大数定理说明了 $\bar{X}_n \to \mu$ 的极限趋势，而中心极限定理则回答了：**在收敛的过程中，样本均值的误差服从什么分布？**
@@ -1119,3 +1117,122 @@ $$
 $$\operatorname{Loss}=\operatorname{MLE}+\lambda \sum_{i=1}^n \omega_i^2$$
 
 其中 $\operatorname{MLE}$ 表示负对数似然项 $-\ln f(D|\theta)$，$\lambda>0$ 是正则化系数。
+
+## 霍夫丁不等式
+
+通过切比雪夫大数定理的证明，我们知道
+
+$$
+P(|\frac{1}{n}\sum_{i=1}^n X_i- \frac{1}{n}\sum_{i=1}^n E(X_i)|\ge \epsilon) \le \frac{\sum\limits_{i=1}^n D(X_i)}{n^2\epsilon^2} \le \frac{nc}{n^2\epsilon^2} = \frac{c}{n\epsilon^2}
+$$
+
+这个公式的收敛速度是
+
+$$\frac{1}{n}$$
+
+如果我们n变大一百倍，概率肯定也至少收敛了一百倍。但是这个速度实际上是可以远远超过一百倍，我们可以这样证明：
+设
+
+$$S_n=X_1+X_2+\cdots+X_n$$
+
+那么我们研究一下这个概率
+
+$$P(S_n-E[S_n] \ge t)$$
+
+因为 $S_n-E[S_n]$ 不是恒大于0的随机变量，所以不能直接套用马尔可夫不等式，这时候可以借助指数函数的两个性质：
+
+- $e^x \gt 0$
+- $e^x$ 在整个实数定义域单调递增
+
+则有
+
+$$
+P(S_n-E[S-n] \ge t)=P(e^{S_n-E[S-n]} \ge e^t)
+$$
+
+这时候就可以用马尔可夫不等式了
+
+$$
+P(e^{S_n-E[S-n]} \ge e^t) \le \frac{E(e^{S_n-E[S-n]})}{e^t}
+$$
+
+### Hoeffding 引理
+
+凸函数有个性质：函数 $f$ 上任选两点 $a,b (a \lt b)$，然后将 $a,b$ 连接成一条直线 $l$，有 $f(x)$ 在直线 $l$ 下方，只有在点 $a,b$ 处函数和直线相等。
+直线方程为：
+
+$$
+y=\frac{b-x}{b-a}f(a)+\frac{x-a}{b-a}f(b)
+$$
+
+所以我们在函数 $e^{\lambda x}$ 上任选两点，有
+
+$$
+e^{\lambda x} \le \frac{b-x}{b-a}e^{\lambda a}+\frac{x-a}{b-a}e^{\lambda b}, x \in [a,b]
+$$
+
+我们计算一下上面的期望，有
+
+$$
+\begin{aligned}
+E(e^{\lambda X}) &\le E(\frac{b-X}{b-a}e^{\lambda a}+\frac{X-a}{b-a}e^{\lambda b}) \\
+&\le \frac{b-E(X)}{b-a}e^{\lambda a}+\frac{E(X)-a}{b-a}e^{\lambda b}
+\end{aligned}
+$$
+
+如果我们预设 $E(X)=0$，则有
+
+$$
+\begin{aligned}
+    E(e^{\lambda X})  &\le \frac{b}{b-a}e^{\lambda a}+\frac{-a}{b-a}e^{\lambda b} \\
+            &\le \frac{be^{\lambda a}-ae^{\lambda b}}{b-a} \\
+            &\le e^{\lambda a}\frac{b-ae^{\lambda (b-a)}}{b-a} \\
+            &\le e^{\lambda a}(\frac{b}{b-a}+\frac{-a}{b-a}e^{\lambda (b-a)})
+\end{aligned}
+$$
+
+令
+
+$$
+p=\frac{-a}{b-a}
+$$
+
+则
+
+$$
+1-p=\frac{b}{b-a}
+$$
+
+带入 $E(e^{\lambda X})$ 得到
+
+$$
+E(e^{\lambda X}) \le e^{\lambda a}(1-p+pe^{\lambda (b-a)})
+$$
+
+再令 $\theta = \lambda(b-a)$，则 $\lambda a=-\theta p$，上式可以化简为
+
+$$
+E(e^{\lambda X}) \le e^{-p\theta} (1 - p + p e^\theta)
+$$
+
+因为 $x=e^{\ln x}$ ,则上式可以写为
+
+$$
+\begin{aligned}
+E(e^{\lambda X}) &\le e^{-p\theta} (1 - p + p e^\theta) \\
+                 &\le e^{-p\theta} e^{\ln (1 - p + p e^\theta)} \\
+                 &\le e^{-p\theta+\ln (1 - p + p e^\theta)}
+\end{aligned}
+$$
+
+构造一个辅助函数
+
+$$
+\phi(\theta)=-p\theta+\ln (1 - p + p e^\theta)
+$$
+
+我们在 $\theta=0$ 处用对 $\phi(\theta)$ 进行泰勒展开，并使用拉格朗日余项得到
+
+$$
+\phi(\theta)=\phi(0)+\phi'(0)(x-0)+\frac{\phi''(0)}{2!}(x-0)^2+\frac{\phi'''(\epsilon)}{3!}(x-x_0)^3
+$$
