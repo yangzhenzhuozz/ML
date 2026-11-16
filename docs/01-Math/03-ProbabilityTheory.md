@@ -1231,8 +1231,29 @@ $$
 \phi(\theta)=-p\theta+\ln (1 - p + p e^\theta)
 $$
 
+则有
+
+$$
+\begin{aligned}
+    \phi'(\theta) &= -p+\frac{pe^\theta}{1-p+pe^\theta} \\
+    \phi''(\theta) &= \frac{pe^\theta(1-p+pe^\theta)-pe^\theta pe^\theta}{(1-p+pe^\theta)^2} \\
+                   &= \frac{pe^\theta(1-p)}{(1-p+pe^\theta)^2}
+\end{aligned}
+$$
+
 我们在 $\theta=0$ 处用对 $\phi(\theta)$ 进行泰勒展开，并使用拉格朗日余项得到
 
 $$
-\phi(\theta)=\phi(0)+\phi'(0)(x-0)+\frac{\phi''(0)}{2!}(x-0)^2+\frac{\phi'''(\epsilon)}{3!}(x-x_0)^3
+\begin{aligned}
+    \phi(\theta) &= \phi(0)+\phi'(0)\theta+\frac{\phi''(\epsilon)}{2!}\theta^2\\
+                 &= 0 + 0 + \frac{p(1-p)e^\epsilon}{(1-p+pe^\epsilon)^2}\frac{\theta^2}{2} \\
+                 &= 0 + 0 + \frac{pe^\epsilon}{1-p+pe^\epsilon}(1-\frac{pe^\epsilon}{1-p+pe^\epsilon})\frac{\theta^2}{2}
+\end{aligned}
+$$
+
+上式中，存在类似 $q(1-q)$ 的结构，这是一个标准开口向下的二次函数，最大值为 $\frac{1}{4}$
+
+所以有
+$$
+\phi(\theta) \le \frac{1}{4} \times \frac{\theta^2}{2}=\frac{\theta^2}{8}
 $$
